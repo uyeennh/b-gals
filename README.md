@@ -9,3 +9,7 @@ B-gals sit prosjekt i TTK4145
 ### Når du kommer på sanntidslaben:
 `git pull`
 //eller bare når du skal oppdatere og se hva de andre har gjort
+
+
+
+Sjekke om vi er konsekevente i bruk av små og store forbokstaver (public og private)
