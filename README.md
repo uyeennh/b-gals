@@ -13,3 +13,6 @@ B-gals sit prosjekt i TTK4145
 
 
 Sjekke om vi er konsekevente i bruk av små og store forbokstaver (public og private)
+
+### Vi er ganske smarte jenter
+'ja det er vi'
