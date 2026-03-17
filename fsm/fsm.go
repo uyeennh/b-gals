@@ -28,6 +28,7 @@ func RunFSM(
 	io.SetFloorIndicator(e.floor)
 	e.dirn = D_Stop
 	e.state = ES_Idle
+	stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 
 	for {

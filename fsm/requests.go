@@ -86,11 +86,9 @@ func ShouldStop(e Elevator) bool {
 }
 
 func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {  
-
     if floor < 0 || floor >= config.N_FLOORS {
         return nil
     }
-	
 	var events []elevio.ButtonEvent
 
     if e.requests[floor][B_Cab] {
