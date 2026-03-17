@@ -134,14 +134,13 @@ func RunFSM(
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 		case <-motorTimer.C():
-			e.floor = -1
-			e.state = ES_Idle
 			io.SetMotorDirection(D_Stop)
+			e.dirn = D_Stop
+			e.state = ES_Idle
+			e.floor = -1
 			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
 			e.floor = findFloor(io, floorCh)
 			io.SetFloorIndicator(e.floor)
-			e.dirn = D_Stop
-			e.state = ES_Idle
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 			
 
@@ -179,12 +178,11 @@ func setAllLights(io ElevatorIO, e Elevator) {
 
 func findFloor(io ElevatorIO, floorCh <-chan int) int {
 	if f := elevio.GetFloor(); f != -1 {
-		io.SetMotorDirection(D_Stop)
 		return f
 	}
 
 	io.SetMotorDirection(D_Up)
-	currentDir := D_Up
+	reversed := false
 	t := time.NewTimer(config.MotorLossTimeout)
 	defer t.Stop()
 
@@ -195,13 +193,10 @@ func findFloor(io ElevatorIO, floorCh <-chan int) int {
 			return floor
 		
 		case <-t.C:
-			if currentDir == D_Up {
-				currentDir = D_Down
-			} else {
-				currentDir = D_Up
-			}
-			io.SetMotorDirection(currentDir)
-			t.Reset(config.MotorLossTimeout)
+			if ! reversed {
+				io.SetMotorDirection(D_Down)
+				reversed = true
+			} 
 		}
 	}
 }
