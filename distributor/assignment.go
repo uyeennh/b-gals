@@ -29,8 +29,8 @@ func computeAndSendAssignment(id string, wv WorldView.WorldView, peersAlive []st
 func extractConfirmedHallRequests(wv WorldView.WorldView) [][2]bool {
 	hallReqs := make([][2]bool, config.N_FLOORS)
 	for f := range wv.HallOrders {
-		hallReqs[f][hallUp] = wv.HallOrders[f][hallUp].Status == order.OS_Const
-		hallReqs[f][hallDown] = wv.HallOrders[f][hallDown].Status == order.OS_Const
+		hallReqs[f][int(elevtype.B_HallUp)] = wv.HallOrders[f][int(elevtype.B_HallUp)].Status == order.OS_Const
+		hallReqs[f][int(elevtype.B_HallDown)] = wv.HallOrders[f][int(elevtype.B_HallDown)].Status == order.OS_Const
 	}
 	return hallReqs
 }
@@ -40,10 +40,10 @@ func buildHRAStates(wv WorldView.WorldView, peersAlive []string) map[string]cost
 	for id, s := range wv.States {
 		// Skip elevators with invalid floor
 		if s.Floor < 0 {
-			continue
+			continue 
 		}
 		// Skip elevators that are not currently alive on the network
-		if !contains(peersAlive, id) {
+		if !order.ContainsID(peersAlive, id) {
 			continue
 		}
 		cabReqs := make([]bool, config.N_FLOORS)
@@ -60,14 +60,7 @@ func buildHRAStates(wv WorldView.WorldView, peersAlive []string) map[string]cost
 	return states
 }
 
-func contains(slice []string, str string) bool {
-	for _, v := range slice {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
+
 
 func behaviourToString(b elevtype.Behaviour) string {
 	switch b {

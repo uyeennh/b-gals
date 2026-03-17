@@ -22,12 +22,12 @@ func resolveUnknown(merged Order, received Order) Order {
 	case OS_Unconst, OS_Const:
 		return Order{
 			Status:  OS_Unconst,
-			Barrier: copyBarrier(received.Barrier),
+			Barrier: CopyBarrier(received.Barrier),
 		}
 	case OS_Fin:
 		return Order{
 			Status:  OS_Fin,
-			Barrier: copyBarrier(received.Barrier),
+			Barrier: CopyBarrier(received.Barrier),
 		}
 	}
 	return merged
@@ -60,7 +60,7 @@ func adoptHigherStatus(merged Order, received Order) Order {
 	}
 	return Order{
 		Status:  received.Status,
-		Barrier: copyBarrier(received.Barrier),
+		Barrier: CopyBarrier(received.Barrier),
 	}
 }
 
@@ -69,7 +69,7 @@ func advanceBarrier(merged Order, id string, peersAlive []string, received Order
 	if !isWaitingStage {
 		return merged
 	}
-	merged.Barrier = mergeUnique(merged.Barrier, received.Barrier)
+	merged.Barrier = MergeBarrier(merged.Barrier, received.Barrier)
 	merged.Barrier = addIfMissing(merged.Barrier, id)
 	merged.Barrier = removeOfflinePeers(merged.Barrier, peersAlive)
 
@@ -94,7 +94,7 @@ func advanceStatus(order Order) Order {
 
 func allAliveAcknowledged(barrier []string, peersAlive []string) bool {
 	for _, peer := range peersAlive {
-		if !containsID(barrier, peer) {
+		if !ContainsID(barrier, peer) {
 			return false
 		}
 	}
@@ -104,18 +104,18 @@ func allAliveAcknowledged(barrier []string, peersAlive []string) bool {
 func removeOfflinePeers(barrier []string, peersAlive []string) []string {
 	stillOnline := make([]string, 0, len(barrier))
 	for _, id := range barrier {
-		if containsID(peersAlive, id) {
+		if ContainsID(peersAlive, id) {
 			stillOnline = append(stillOnline, id)
 		}
 	}
 	return stillOnline
 }
 
-func mergeUnique(a, b []string) []string {
+func MergeBarriers(a, b []string) []string {
 	merged := make([]string, len(a))
 	copy(merged, a)
 	for _, id := range b {
-		if !containsID(merged, id) {
+		if !ContainsID(merged, id) {
 			merged = append(merged, id)
 		}
 	}
@@ -123,13 +123,13 @@ func mergeUnique(a, b []string) []string {
 }
 
 func addIfMissing(slice []string, id string) []string {
-	if containsID(slice, id) {
+	if ContainsID(slice, id) {
 		return slice
 	}
 	return append(slice, id)
 }
 
-func containsID(slice []string, target string) bool {
+func ContainsID(slice []string, target string) bool {
 	for _, v := range slice {
 		if v == target {
 			return true
@@ -138,22 +138,10 @@ func containsID(slice []string, target string) bool {
 	return false
 }
 
-func copyBarrier(b []string) []string {
-	c := make([]string, len(b))
-	copy(c, b)
-	return c
-}
+
 
 func PeersAliveInBarrier(barrier []string, peersAlive []string) bool {
 	return allAliveAcknowledged(barrier, peersAlive)
-}
-
-func Contains(slice []string, target string) bool {
-	return containsID(slice, target)
-}
-
-func MergeUnique(a, b []string) []string {
-	return mergeUnique(a, b)
 }
 
 func CopyBarrier(b []string) []string {
