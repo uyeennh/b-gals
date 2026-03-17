@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"os"
 	"heis/order"
+
 )
+func cabOrdersPath(id string) string {
+    return "cab_orders_" + id + ".json"
+}
 
 //saves caborders to disk
 
@@ -13,13 +17,13 @@ func SaveCabOrders(id string, orders []order.Order) error {
     if err != nil {
         return err
     }
-    return os.WriteFile("cab_orders_"+id+".json", data, 0644)
+    return os.WriteFile(cabOrdersPath(id), data, 0644)
 }
 
 //caborders read back from disk after restart
 
 func LoadCabOrders(id string, numFloors int) []order.Order {
-    data, err := os.ReadFile("cab_orders_" + id + ".json")
+    data, err := os.ReadFile(cabOrdersPath(id))
     if err != nil {
         return order.NewCabOrders(numFloors)
     }
