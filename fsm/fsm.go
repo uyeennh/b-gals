@@ -152,7 +152,7 @@ func RunFSM(
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				}
 			} else {
-				if obstrCounter > config.ObstrTripsBeforeFloorInvalid {
+				if obstrCounter >= config.ObstrTripsBeforeFloorInvalid {
 					e.floor = obstrStoredFloor
 					io.SetDoorOpenLamp(false)
 					io.SetMotorDirection(D_Stop)
