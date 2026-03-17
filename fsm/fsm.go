@@ -3,6 +3,7 @@ package fsm
 import (
 	"heis/config"
 	"heis/driver/elevio"
+	"time"
 )
 
 func RunFSM(
@@ -23,10 +24,11 @@ func RunFSM(
 
 	var pendingFinReqs []elevio.ButtonEvent
 
-	io.SetMotorDirection(D_Down)
-	e.dirn = D_Down
-	e.state = ES_Moving
-	motorTimer.Start(config.MotorLossTimeout)
+	e.floor = findFloor(io, floorCh)
+	io.SetFloorIndicator(e.floor)
+	e.dirn = D_Stop
+	e.state = ES_Idle
+
 
 	for {
 		select {
@@ -67,28 +69,6 @@ func RunFSM(
 
 		case newFloor := <-floorCh:
 			motorTimer.Stop()
-
-			if e.floor == -1 {
-				e.floor = newFloor
-				io.SetMotorDirection(D_Stop)
-				io.SetFloorIndicator(newFloor)
-				io.SetDoorOpenLamp(false)
-				e.dirn = D_Stop
-				e.state = ES_Idle
-				// Check if there is already a request at this floor
-				if ShouldStop(e) {
-					io.SetDoorOpenLamp(true)
-					pendingFinReqs = collectClearedEvents(&e, e.floor)
-					doorTimer.Start(e.elevConfig.DoorOpenDuration)
-					e.state = ES_DoorOpen
-				} else {
-					io.SetDoorOpenLamp(false)
-				}
-
-				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-				continue
-			}
-
 			e.floor = newFloor
 			io.SetFloorIndicator(newFloor)
 
@@ -155,7 +135,15 @@ func RunFSM(
 
 		case <-motorTimer.C():
 			e.floor = -1
+			e.state = ES_Idle
+			io.SetMotorDirection(D_Stop)
 			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
+			e.floor = findFloor(io, floorCh)
+			io.SetFloorIndicator(e.floor)
+			e.dirn = D_Stop
+			e.state = ES_Idle
+			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
+			
 
 		case obstr := <-obstrCh:
 			obstrActive = obstr
@@ -188,3 +176,33 @@ func setAllLights(io ElevatorIO, e Elevator) {
 		io.SetButtonLamp(f, B_Cab, e.requests[f][B_Cab])
 	}
 }
+
+func findFloor(io ElevatorIO, floorCh <-chan int) int {
+	if f := elevio.GetFloor(); f != -1 {
+		io.SetMotorDirection(D_Stop)
+		return f
+	}
+
+	io.SetMotorDirection(D_Up)
+	currentDir := D_Up
+	t := time.NewTimer(config.MotorLossTimeout)
+	defer t.Stop()
+
+	for {
+		select {
+		case floor := <-floorCh:
+			io.SetMotorDirection(D_Stop)
+			return floor
+		
+		case <-t.C:
+			if currentDir == D_Up {
+				currentDir = D_Down
+			} else {
+				currentDir = D_Up
+			}
+			io.SetMotorDirection(currentDir)
+			t.Reset(config.MotorLossTimeout)
+		}
+	}
+}
+				
