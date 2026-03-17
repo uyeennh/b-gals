@@ -37,7 +37,7 @@ import (
 	"os"
 	"log"
 
-	"heis/WorldView"
+	"heis/worldview"
 	"heis/config"
 	"heis/distributor"
 	"heis/driver/elevio"
