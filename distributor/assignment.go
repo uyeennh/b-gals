@@ -1,7 +1,7 @@
 package distributor
 
 import (
-	"heis/WorldView"
+	"heis/worldview"
 	"heis/config"
 	"heis/costfunction"
 	"heis/driver/elevio"

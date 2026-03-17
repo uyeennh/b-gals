@@ -3,7 +3,7 @@ package distributor
 import (
 	"heis/config"
 	"heis/driver/elevio"
-	"heis/WorldView"
+	"heis/worldview"
 	"heis/order"
     "heis/elevtype"
 

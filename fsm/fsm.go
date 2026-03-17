@@ -60,7 +60,7 @@ func RunFSM(
 				}
 
 			case ES_DoorOpen:
-				setAllLights(io,e)
+				setAllLights(io, e)
 			}
 
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
@@ -118,7 +118,6 @@ func RunFSM(
 			if obstrActive {
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 
-				
 				if obstrCounter == config.ObstrTripsBeforeFloorInvalid {
 					obstrStoredFloor = e.floor
 					e.floor = -1
@@ -168,10 +167,14 @@ func RunFSM(
 			} else {
 				if obstrCounter > config.ObstrTripsBeforeFloorInvalid {
 					e.floor = obstrStoredFloor
-				}
-				if e.state == ES_DoorOpen {
+					io.SetDoorOpenLamp(false)
+					io.SetMotorDirection(D_Stop)
+					e.dirn = D_Stop
+					e.state = ES_Idle
+				} else if e.state == ES_DoorOpen {
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				}
+
 				obstrCounter = 0
 				obstrStoredFloor = -1
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}

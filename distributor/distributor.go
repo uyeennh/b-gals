@@ -76,7 +76,7 @@ func Distributor(
 			localWV.HallOrders = mergeHallOrders(
 				id,
 				localWV.HallOrders,
-				msg.worldview.HallOrders,
+				msg.WorldView.HallOrders,
 				peersAlive,
 			)
 
@@ -84,7 +84,7 @@ func Distributor(
 				id,
 				localWV.States,
 				msg.SenderID,
-				msg.worldview.States,
+				msg.WorldView.States,
 				peersAlive,
 			)
 
