@@ -170,6 +170,10 @@ func RunFSM(
 				}
 				obstrCounter = 0
 				obstrStoredFloor = -1
+
+				if e.state == ES_DoorOpen {
+					doorTimer.Start(e.elevConfig.DoorOpenDuration)
+				}
 			}
 		}
 	}
