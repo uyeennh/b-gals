@@ -17,10 +17,6 @@ const (
 	lampUpdateInterval = 200 * time.Millisecond
 )
 
-const (
-	hallUp   = 0
-	hallDown = 1
-)
 
 type networkMessage struct {
 	SenderID  string
@@ -119,7 +115,7 @@ func Distributor(
 			// Always make sure our own ID is in the peer list
 			// peers.Receiver never includes ourselves because we never
 			// hear our own broadcast — so we add ourselves manually here
-			if !order.Contains(peersAlive, id) {
+			if !order.ContainsID(peersAlive, id) {
 				peersAlive = append(peersAlive, id)
 			}
 			fmt.Println("Peers alive:", peersAlive)
