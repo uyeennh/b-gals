@@ -2,7 +2,7 @@ package distributor
 
 import (
 	"fmt"
-	"heis/WorldView"
+	"heis/worldview"
 	"heis/config"
 	"heis/driver/elevio"
 	"heis/network/bcast"
