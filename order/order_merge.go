@@ -69,7 +69,7 @@ func advanceBarrier(merged Order, id string, peersAlive []string, received Order
 	if !isWaitingStage {
 		return merged
 	}
-	merged.Barrier = MergeBarrier(merged.Barrier, received.Barrier)
+	merged.Barrier = MergeBarriers(merged.Barrier, received.Barrier)
 	merged.Barrier = addIfMissing(merged.Barrier, id)
 	merged.Barrier = removeOfflinePeers(merged.Barrier, peersAlive)
 
