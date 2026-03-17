@@ -7,7 +7,7 @@ import (
 	"heis/saveIfCrash"
 )
 
-func handleButtonPress(id string, wv WorldView.WorldView, btn elevio.ButtonEvent, peersAlive []string) WorldView.WorldView {
+func handleButtonPress(id string, wv  worldview.WorldView, btn elevio.ButtonEvent, peersAlive []string)  worldview.WorldView {
 	alone := isSoleElevator(peersAlive)
 
 	switch btn.Button {
@@ -36,7 +36,7 @@ func handleButtonPress(id string, wv WorldView.WorldView, btn elevio.ButtonEvent
 	return wv
 }
 
-func handleFinishedOrder(id string, wv WorldView.WorldView, btn elevio.ButtonEvent, peersAlive []string) WorldView.WorldView {
+func handleFinishedOrder(id string, wv  worldview.WorldView, btn elevio.ButtonEvent, peersAlive []string)  worldview.WorldView {
 	alone := isSoleElevator(peersAlive)
 
 	switch btn.Button {

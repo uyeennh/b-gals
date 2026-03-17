@@ -18,19 +18,20 @@ const (
 )
 
 
+
 type networkMessage struct {
 	SenderID  string
-	WorldView WorldView.WorldView
+	WorldView  worldview.WorldView
 }
 
 func Distributor(
 	id string,
-	stateCh <-chan WorldView.ElevatorState,
+	stateCh <-chan worldview.ElevatorState,
 	finReqCh <-chan elevio.ButtonEvent,
 	assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool,
 	peerUpdateCh <-chan peers.PeerUpdate,
 ) {
-	localWV := WorldView.InitWorldView(id, config.N_FLOORS)
+	localWV := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
 	for f := range savedCabOrders {
 		if savedCabOrders[f].Status >= order.OS_Unconst {
@@ -75,7 +76,7 @@ func Distributor(
 			localWV.HallOrders = mergeHallOrders(
 				id,
 				localWV.HallOrders,
-				msg.WorldView.HallOrders,
+				msg.worldview.HallOrders,
 				peersAlive,
 			)
 
@@ -83,7 +84,7 @@ func Distributor(
 				id,
 				localWV.States,
 				msg.SenderID,
-				msg.WorldView.States,
+				msg.worldview.States,
 				peersAlive,
 			)
 

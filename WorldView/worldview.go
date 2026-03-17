@@ -1,4 +1,4 @@
-package WorldView
+package worldview
 
 import (
 	"heis/elevtype"

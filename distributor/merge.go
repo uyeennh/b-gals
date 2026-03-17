@@ -16,11 +16,11 @@ func mergeHallOrders(id string, local [][2]order.Order, received [][2]order.Orde
 
 func mergeStates(
 	localID string,
-	localStates map[string]WorldView.ElevatorState,
+	localStates map[string]worldview.ElevatorState,
 	senderID string,
-	receivedStates map[string]WorldView.ElevatorState,
+	receivedStates map[string]worldview.ElevatorState,
 	peersAlive []string,
-) map[string]WorldView.ElevatorState {
+) map[string]worldview.ElevatorState {
 
 	// Update the physical state of the elevator that sent this message
 	if recvState, ok := receivedStates[senderID]; ok {
@@ -57,10 +57,10 @@ func mergeStates(
 	return localStates
 }
 
-func copyWorldView(wv WorldView.WorldView) WorldView.WorldView {
-	copiedWV := WorldView.WorldView{
+func copyWorldView(wv  worldview.WorldView)  worldview.WorldView {
+	copiedWV :=  worldview.WorldView{
 		HallOrders: make([][2]order.Order, len(wv.HallOrders)),
-		States:     make(map[string]WorldView.ElevatorState),
+		States:     make(map[string]worldview.ElevatorState),
 	}
 	// Deep copy hall orders
 	for f := range wv.HallOrders {
@@ -80,7 +80,7 @@ func copyWorldView(wv WorldView.WorldView) WorldView.WorldView {
 				Barrier: order.CopyBarrier(o.Barrier),
 			}
 		}
-		copiedState := WorldView.ElevatorState{
+		copiedState := worldview.ElevatorState{
 			Floor:     state.Floor,
 			Direction: state.Direction,
 			Behaviour: state.Behaviour,

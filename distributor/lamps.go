@@ -9,7 +9,7 @@ import (
 
 )
 
-func updateButtonLamps(id string, wv WorldView.WorldView) {
+func updateButtonLamps(id string, wv  worldview.WorldView) {
     for f := 0; f < config.N_FLOORS; f++ {
         // Hall up lamp
         elevio.SetButtonLamp(elevio.BT_HallUp, f,

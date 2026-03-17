@@ -25,7 +25,7 @@ package main
 //                          │        stateAdapter goroutine
 //                          │               │
 //                          │               ▼
-//                          │        stateCh (WorldView.ElevatorState)
+//                          │        stateCh (worldview.ElevatorState)
 //                          │               │
 //                          ▼               ▼
 //                        finReqCh ──► Distributor ──► assignmentCh ──► RunFSM
@@ -85,10 +85,10 @@ func main() {
 	// ── 4. Channel declarations ───────────────────────────────────────────
 
 	// FSM  →  Distributor: physical state updates after every event.
-	// RunFSM sends fsm.ElevatorStateMsg; Distributor wants WorldView.ElevatorState.
+	// RunFSM sends fsm.ElevatorStateMsg; Distributor wants worldview.ElevatorState.
 	// A lightweight adapter goroutine (see below) bridges the two types.
 	stateMsgCh := make(chan fsm.ElevatorStateMsg, 4)
-	stateCh    := make(chan WorldView.ElevatorState, 4)
+	stateCh    := make(chan worldview.ElevatorState, 4)
 
 	// Distributor  →  FSM: assigned request matrix after every re-computation.
 	// Buffered so that a slow FSM does not block the Distributor's select loop.
@@ -109,14 +109,14 @@ func main() {
 	// to register new hall and cab orders in the WorldView before assigning them).
 
 	// ── 6. State type adapter ─────────────────────────────────────────────
-	// fsm.ElevatorStateMsg  →  WorldView.ElevatorState
+	// fsm.ElevatorStateMsg  →  worldview.ElevatorState
 	//
 	// The FSM uses its own internal ElevatorState enum (ES_Idle / ES_Moving /
 	// ES_DoorOpen) while the WorldView uses elevtype.Behaviour.  This goroutine
 	// translates between the two so neither package needs to import the other.
 	go func() {
 		for msg := range stateMsgCh {
-			stateCh <- WorldView.ElevatorState{
+			stateCh <- worldview.ElevatorState{
 				Floor:     msg.Floor,
 				Direction: elevtype.Dirn(msg.Dirn),
 				Behaviour: fsmStateToBehaviour(msg.State),

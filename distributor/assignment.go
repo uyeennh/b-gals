@@ -9,7 +9,7 @@ import (
 	"heis/order"
 )
 
-func computeAndSendAssignment(id string, wv WorldView.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
+func computeAndSendAssignment(id string, wv  worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
 	hallReqs := extractConfirmedHallRequests(wv)
 	states := buildHRAStates(wv, peersAlive)
 	assigned, ok := costfunction.Compute(id, hallReqs, states)
@@ -26,7 +26,7 @@ func computeAndSendAssignment(id string, wv WorldView.WorldView, peersAlive []st
 
 }
 
-func extractConfirmedHallRequests(wv WorldView.WorldView) [][2]bool {
+func extractConfirmedHallRequests(wv  worldview.WorldView) [][2]bool {
 	hallReqs := make([][2]bool, config.N_FLOORS)
 	for f := range wv.HallOrders {
 		hallReqs[f][int(elevtype.B_HallUp)] = wv.HallOrders[f][int(elevtype.B_HallUp)].Status == order.OS_Const
@@ -35,7 +35,7 @@ func extractConfirmedHallRequests(wv WorldView.WorldView) [][2]bool {
 	return hallReqs
 }
 
-func buildHRAStates(wv WorldView.WorldView, peersAlive []string) map[string]costfunction.HRAElevState {
+func buildHRAStates(wv  worldview.WorldView, peersAlive []string) map[string]costfunction.HRAElevState {
 	states := make(map[string]costfunction.HRAElevState)
 	for id, s := range wv.States {
 		// Skip elevators with invalid floor
@@ -82,7 +82,7 @@ func dirnToString(d elevtype.Dirn) string {
 	}
 }
 
-func mergeAssignedWithCabOrders(id string, assigned [][2]bool, wv WorldView.WorldView) [config.N_FLOORS][config.N_BUTTONS]bool {
+func mergeAssignedWithCabOrders(id string, assigned [][2]bool, wv  worldview.WorldView) [config.N_FLOORS][config.N_BUTTONS]bool {
 	var reqs [config.N_FLOORS][config.N_BUTTONS]bool
 	state, exists := wv.States[id]
 	for f := 0; f < config.N_FLOORS; f++ {
