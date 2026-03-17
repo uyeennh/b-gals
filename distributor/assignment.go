@@ -1,12 +1,12 @@
 package distributor
 
 import (
-	"heis/config"
-	"heis/driver/elevio"
 	"heis/WorldView"
-	"heis/order"
+	"heis/config"
 	"heis/costfunction"
+	"heis/driver/elevio"
 	"heis/elevtype"
+	"heis/order"
 )
 
 func computeAndSendAssignment(id string, wv WorldView.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
@@ -19,7 +19,7 @@ func computeAndSendAssignment(id string, wv WorldView.WorldView, peersAlive []st
 	reqs := mergeAssignedWithCabOrders(id, assigned, wv)
 
 	select {
-	case <- assignmentCh:
+	case <-assignmentCh:
 	default:
 	}
 	assignmentCh <- reqs
@@ -40,7 +40,7 @@ func buildHRAStates(wv WorldView.WorldView, peersAlive []string) map[string]cost
 	for id, s := range wv.States {
 		// Skip elevators with invalid floor
 		if s.Floor < 0 {
-			continue 
+			continue
 		}
 		// Skip elevators that are not currently alive on the network
 		if !order.ContainsID(peersAlive, id) {
@@ -59,8 +59,6 @@ func buildHRAStates(wv WorldView.WorldView, peersAlive []string) map[string]cost
 	}
 	return states
 }
-
-
 
 func behaviourToString(b elevtype.Behaviour) string {
 	switch b {
@@ -88,8 +86,8 @@ func mergeAssignedWithCabOrders(id string, assigned [][2]bool, wv WorldView.Worl
 	var reqs [config.N_FLOORS][config.N_BUTTONS]bool
 	state, exists := wv.States[id]
 	for f := 0; f < config.N_FLOORS; f++ {
-		reqs[f][int(elevio.BT_HallUp)] = assigned[f][hallUp]
-		reqs[f][int(elevio.BT_HallDown)] = assigned[f][hallDown]
+		reqs[f][int(elevio.BT_HallUp)] = assigned[f][int(elevtype.B_HallUp)]
+		reqs[f][int(elevio.BT_HallDown)] = assigned[f][int(elevtype.B_HallDown)]
 		if exists {
 			reqs[f][int(elevio.BT_Cab)] = state.CabOrders[f].Status == order.OS_Const
 		}
