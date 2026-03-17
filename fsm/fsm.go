@@ -21,6 +21,8 @@ func RunFSM(
 	obstrCounter := 0
 	obstrStoredFloor := -1
 
+	var pendingFinReqs []elevio.ButtonEvent
+
 	io.SetMotorDirection(D_Down)
 	e.dirn = D_Down
 	e.state = ES_Moving
@@ -40,7 +42,7 @@ func RunFSM(
 				case ES_DoorOpen:
 					io.SetDoorOpenLamp(true)
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
-					ClearAtFloor(&e, e.floor, finReqCh)
+					pendingFinReqs = collectClearedEvents(&e, e.floor)
 					setAllLights(io, e)
 				case ES_Moving:
 					io.SetMotorDirection(e.dirn)
@@ -75,7 +77,7 @@ func RunFSM(
 				// Check if there is already a request at this floor
 				if ShouldStop(e) {
 					io.SetDoorOpenLamp(true)
-					ClearAtFloor(&e, newFloor, finReqCh)
+					pendingFinReqs = collectClearedEvents(&e, e.floor)
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 					e.state = ES_DoorOpen
 				} else {
@@ -97,7 +99,7 @@ func RunFSM(
 			if ShouldStop(e) {
 				io.SetMotorDirection(D_Stop)
 				io.SetDoorOpenLamp(true)
-				ClearAtFloor(&e, newFloor, finReqCh)
+				pendingFinReqs = collectClearedEvents(&e, e.floor)
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				setAllLights(io, e)
 				e.state = ES_DoorOpen
@@ -117,12 +119,16 @@ func RunFSM(
 
 				obstrCounter++
 				if obstrCounter >= config.ObstrTripsBeforeFloorInvalid {
+					pendingFinReqs = nil
 					obstrStoredFloor = e.floor
 					e.floor = -1
 					stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
 				}
 				continue
 			}
+
+			flushPendingFinReqs(pendingFinReqs, finReqCh)
+			pendingFinReqs = nil
 
 			pair := ChooseDirection(e)
 			e.dirn, e.state = pair.dirn, pair.state
@@ -131,7 +137,7 @@ func RunFSM(
 			case ES_DoorOpen:
 				io.SetDoorOpenLamp(true)
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
-				ClearAtFloor(&e, e.floor, finReqCh)
+				pendingFinReqs = collectClearedEvents(&e, e.floor)
 				setAllLights(io, e)
 
 			case ES_Moving:
