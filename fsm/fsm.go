@@ -54,13 +54,6 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
-				pair := ChooseDirection(e)
-				if pair.state == ES_Idle {
-					io.SetMotorDirection(D_Stop)
-					motorTimer.Stop()
-					e.dirn = D_Stop
-					e.state = ES_Idle
-				}
 
 			case ES_DoorOpen:
 				setAllLights(io, e)
@@ -86,8 +79,21 @@ func RunFSM(
 				setAllLights(io, e)
 				e.state = ES_DoorOpen
 			} else {
-				motorTimer.Start(config.MotorLossTimeout)
-			}
+				pair := ChooseDirection(e)
+    			e.dirn, e.state = pair.dirn, pair.state
+    			switch e.state {
+    			case ES_Idle:
+        			io.SetMotorDirection(D_Stop)
+    			case ES_Moving:
+        			io.SetMotorDirection(e.dirn)
+        			motorTimer.Start(config.MotorLossTimeout)
+    			case ES_DoorOpen:
+        			io.SetDoorOpenLamp(true)
+        			pendingFinReqs = collectClearedEvents(&e, e.floor)
+        			doorTimer.Start(e.elevConfig.DoorOpenDuration)
+        			setAllLights(io, e)
+				}
+			}	
 
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
