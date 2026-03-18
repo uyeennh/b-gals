@@ -110,7 +110,7 @@ func Distributor(
 			s.Direction = state.Direction
 			s.Behaviour = state.Behaviour
 			localWV.States[id] = s
-			computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
+			//computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
 
 		case pu := <-peerUpdateCh:
 			peersAlive = pu.Peers
