@@ -11,7 +11,7 @@ func handleButtonPress(id string, worldView worldview.WorldView, buttonEvent ele
 	alone := isSoleElevator(peersAlive)
 
 	switch buttonEvent.Button {
-	case elevio.BT_Cab:
+	case elevio.ButtonTypeCab:
 		state := worldView.States[id]
 		if state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusNone ||
 			state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusUnknown {
@@ -40,7 +40,7 @@ func handleFinishedOrder(id string, worldView worldview.WorldView, buttonEvent e
 	alone := isSoleElevator(peersAlive)
 
 	switch buttonEvent.Button {
-	case elevio.BT_Cab:
+	case elevio.ButtonTypeCab:
 		state := worldView.States[id]
 		state.CabOrders[buttonEvent.Floor].Status = order.OrderStatusNone
 		state.CabOrders[buttonEvent.Floor].Barrier = []string{}

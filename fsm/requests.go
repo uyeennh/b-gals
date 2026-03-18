@@ -92,27 +92,27 @@ func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
 	var events []elevio.ButtonEvent
 
     if e.requests[floor][B_Cab] {
-        events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_Cab})
+        events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonTypeCab})
         e.requests[floor][B_Cab] = false
     }
 
     switch e.dirn {
     case D_Up:
         if e.requests[floor][B_HallUp] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallUp})
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonTypeHallUp})
             e.requests[floor][B_HallUp] = false
         }
         if !requestsAbove(*e, floor) && e.requests[floor][B_HallDown] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallDown})
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonTypeHallDown})
             e.requests[floor][B_HallDown] = false
         }
     case D_Down:
         if e.requests[floor][B_HallDown] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallDown})
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonTypeHallDown})
             e.requests[floor][B_HallDown] = false
         }
         if !requestsBelow(*e, floor) && e.requests[floor][B_HallUp] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallUp})
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonTypeHallUp})
             e.requests[floor][B_HallUp] = false
         }
     case D_Stop:

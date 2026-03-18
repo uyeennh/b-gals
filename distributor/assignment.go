@@ -86,10 +86,10 @@ func mergeAssignedWithCabOrders(id string, assigned [][2]bool, worldView worldvi
 	var reqs [config.N_FLOORS][config.N_BUTTONS]bool
 	state, exists := worldView.States[id]
 	for f := 0; f < config.N_FLOORS; f++ {
-		reqs[f][int(elevio.BT_HallUp)] = assigned[f][int(elevtype.B_HallUp)]
-		reqs[f][int(elevio.BT_HallDown)] = assigned[f][int(elevtype.B_HallDown)]
+		reqs[f][int(elevio.ButtonTypeHallUp)] = assigned[f][int(elevtype.B_HallUp)]
+		reqs[f][int(elevio.ButtonTypeHallDown)] = assigned[f][int(elevtype.B_HallDown)]
 		if exists {
-			reqs[f][int(elevio.BT_Cab)] = state.CabOrders[f].Status == order.OrderStatusConfirmed
+			reqs[f][int(elevio.ButtonTypeCab)] = state.CabOrders[f].Status == order.OrderStatusConfirmed
 		}
 	}
 	return reqs
