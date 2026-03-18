@@ -2,13 +2,13 @@ package distributor
 
 import (
 	"fmt"
-	"heis/worldview"
 	"heis/config"
 	"heis/driver/elevio"
 	"heis/network/bcast"
 	"heis/network/peers"
 	"heis/order"
 	"heis/saveIfCrash"
+	"heis/worldview"
 	"time"
 )
 
@@ -17,11 +17,9 @@ const (
 	lampUpdateInterval = 200 * time.Millisecond
 )
 
-
-
 type networkMessage struct {
 	SenderID  string
-	WorldView  worldview.WorldView
+	WorldView worldview.WorldView
 }
 
 func Distributor(
@@ -34,8 +32,8 @@ func Distributor(
 	localWV := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
 	for f := range savedCabOrders {
-		if savedCabOrders[f].Status >= order.OS_Unconst {
-			savedCabOrders[f].Status = order.OS_Const
+		if savedCabOrders[f].Status >= order.OS_Unconfirmed {
+			savedCabOrders[f].Status = order.OS_Confirmed
 			savedCabOrders[f].Barrier = []string{}
 		}
 	}

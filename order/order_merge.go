@@ -11,22 +11,22 @@ func MergeOrder(id string, local Order, received Order, peersAlive []string) Ord
 }
 
 func resolveUnknown(merged Order, received Order) Order {
-	if merged.Status != OS_Unk {
+	if merged.Status != OS_Unknown {
 		return merged
 	}
 	switch received.Status {
-	case OS_Unk:
+	case OS_Unknown:
 		return merged
 	case OS_None:
 		return Order{Status: OS_None, Barrier: []string{}}
-	case OS_Unconst, OS_Const:
+	case OS_Unconfirmed, OS_Confirmed:
 		return Order{
-			Status:  OS_Unconst,
+			Status:  OS_Unconfirmed,
 			Barrier: CopyBarrier(received.Barrier),
 		}
-	case OS_Fin:
+	case OS_Finished:
 		return Order{
-			Status:  OS_Fin,
+			Status:  OS_Finished,
 			Barrier: CopyBarrier(received.Barrier),
 		}
 	}
@@ -34,14 +34,14 @@ func resolveUnknown(merged Order, received Order) Order {
 }
 
 func guardIllegalRollback(merged Order, received Order) Order {
-	// Guard: never roll back from OS_None to OS_Fin
-	// This handles stale OS_Fin broadcasts arriving after we already cleared
-	if merged.Status == OS_None && received.Status == OS_Fin {
+	// Guard: never roll back from OS_None to OS_Finished
+	// This handles stale OS_Finished broadcasts arriving after we already cleared
+	if merged.Status == OS_None && received.Status == OS_Finished {
 		return merged
 	}
-	// If we are at OS_Fin and receive OS_None, the cycle completed
+	// If we are at OS_Finished and receive OS_None, the cycle completed
 	// on another elevator — we should also clear
-	if merged.Status == OS_Fin && received.Status == OS_None {
+	if merged.Status == OS_Finished && received.Status == OS_None {
 		return Order{Status: OS_None, Barrier: []string{}}
 	}
 	return merged
@@ -52,11 +52,11 @@ func adoptHigherStatus(merged Order, received Order) Order {
 		return merged
 	}
 
-	networkAlreadySettled := received.Status == OS_Const
-	weAreStillWaiting := merged.Status == OS_Unconst
+	networkAlreadySettled := received.Status == OS_Confirmed
+	weAreStillWaiting := merged.Status == OS_Unconfirmed
 
 	if networkAlreadySettled && weAreStillWaiting {
-		return Order{Status: OS_Const, Barrier: []string{}}
+		return Order{Status: OS_Confirmed, Barrier: []string{}}
 	}
 	return Order{
 		Status:  received.Status,
@@ -65,7 +65,7 @@ func adoptHigherStatus(merged Order, received Order) Order {
 }
 
 func advanceBarrier(merged Order, id string, peersAlive []string, received Order) Order {
-	isWaitingStage := merged.Status == OS_Unconst || merged.Status == OS_Fin
+	isWaitingStage := merged.Status == OS_Unconfirmed || merged.Status == OS_Finished
 	if !isWaitingStage {
 		return merged
 	}
@@ -81,8 +81,8 @@ func advanceBarrier(merged Order, id string, peersAlive []string, received Order
 
 func advanceStatus(order Order) Order {
 	transitions := map[OrderStatus]OrderStatus{
-		OS_Unconst: OS_Const,
-		OS_Fin:     OS_None,
+		OS_Unconfirmed: OS_Confirmed,
+		OS_Finished:    OS_None,
 	}
 	next, validTransition := transitions[order.Status]
 	if !validTransition {
@@ -137,8 +137,6 @@ func ContainsID(slice []string, target string) bool {
 	}
 	return false
 }
-
-
 
 func PeersAliveInBarrier(barrier []string, peersAlive []string) bool {
 	return allAliveAcknowledged(barrier, peersAlive)
