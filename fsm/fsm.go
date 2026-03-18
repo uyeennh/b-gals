@@ -102,11 +102,17 @@ func RunFSM(
 				if obstrCounter == config.ObstrTripsBeforeFloorInvalid {
 					obstrStoredFloor = e.floor
 					e.floor = -1
-					pendingFinReqs = nil
 					stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
 				}
 				obstrCounter++
 				continue
+			}
+			if e.floor == -1 &&obstrStoredFloor != -1 {
+				e.floor = obstrStoredFloor
+				obstrStoredFloor = -1
+			}
+			if pendingFinReqs == nil && e.floor >= 0 {
+				pendingFinReqs = collectClearedEvents(&e, e.floor)
 			}
 
 			flushPendingFinReqs(pendingFinReqs, finReqCh)
@@ -153,18 +159,10 @@ func RunFSM(
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				}
 			} else {
-				if obstrCounter >= config.ObstrTripsBeforeFloorInvalid {
-					e.floor = obstrStoredFloor
-					io.SetDoorOpenLamp(false)
-					io.SetMotorDirection(D_Stop)
-					e.dirn = D_Stop
-					e.state = ES_Idle
-				} else if e.state == ES_DoorOpen {
+				obstrCounter = 0
+				if e.state == ES_DoorOpen {
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				}
-
-				obstrCounter = 0
-				obstrStoredFloor = -1
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 			}
 		}
