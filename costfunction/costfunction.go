@@ -43,7 +43,7 @@ func Compute(
 	}
 
 
-	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes), "--clearRequestType", "all").CombinedOutput()
+	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
 	if err != nil {
 		return nil, false
 	}
