@@ -141,16 +141,12 @@ func RunFSM(
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 		case <-motorTimer.C():
-			io.SetMotorDirection(D_Stop)
-			e.dirn = D_Stop
-			e.state = ES_Idle
 			e.floor = -1
+			e.dirn = D_Up
+			e.state = ES_Moving
 			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
-			e.floor = findFloor(io, floorCh)
-			io.SetFloorIndicator(e.floor)
-			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-			
-
+			io.SetMotorDirection(D_Up)
+		
 		case obstr := <-obstrCh:
 			obstrActive = obstr
 
