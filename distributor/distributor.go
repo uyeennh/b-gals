@@ -110,8 +110,8 @@ func Distributor(
 			localWorldView.States[id] = s
 			//computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
 
-		case pu := <-peerUpdateCh:
-			peersAlive = pu.Peers
+		case buttonEvent := <-peerUpdateCh:
+			peersAlive = buttonEvent.Peers
 			// Always make sure our own ID is in the peer list
 			// peers.Receiver never includes ourselves because we never
 			// hear our own broadcast — so we add ourselves manually here
