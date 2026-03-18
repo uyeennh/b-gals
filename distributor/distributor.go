@@ -1,4 +1,3 @@
-
 package distributor
 
 import (
@@ -23,7 +22,6 @@ type networkMessage struct {
 	WorldView worldview.WorldView
 }
 
-
 func Distributor(
 	id string,
 	stateCh <-chan worldview.ElevatorState,
@@ -33,12 +31,14 @@ func Distributor(
 ) {
 	localWorldView := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
+
 	for f := range savedCabOrders {
 		if savedCabOrders[f].Status >= order.OrderStatusUnconfirmed {
 			savedCabOrders[f].Status = order.OrderStatusConfirmed
 			savedCabOrders[f].Barrier = []string{}
 		}
 	}
+
 	restoredState := localWorldView.States[id]
 	restoredState.CabOrders = savedCabOrders
 	localWorldView.States[id] = restoredState
@@ -47,6 +47,7 @@ func Distributor(
 
 	messageTx := make(chan networkMessage, 1)
 	messageRx := make(chan networkMessage)
+
 	go bcast.Transmitter(config.PortDistributor, messageTx)
 	go bcast.Receiver(config.PortDistributor, messageRx)
 
@@ -61,7 +62,6 @@ func Distributor(
 
 	for {
 		select {
-
 		case <-broadcastTicker.C:
 			messageTx <- networkMessage{
 				SenderID:  id,
@@ -72,14 +72,12 @@ func Distributor(
 			if message.SenderID == id {
 				continue
 			}
-
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
 				message.WorldView.HallOrders,
 				peersAlive,
 			)
-
 			localWorldView.States = mergeStates(
 				id,
 				localWorldView.States,
@@ -87,7 +85,6 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
-
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case buttonEvent := <-driverButtonCh:
@@ -111,11 +108,9 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
-			// Always make sure our own ID is in the peer list
 			// peers.Receiver never includes ourselves because we never
 			// hear our own broadcast — so we add ourselves manually here
 			if !order.ContainsID(peersAlive, id) {
@@ -128,4 +123,12 @@ func Distributor(
 			updateButtonLamps(id, localWorldView)
 		}
 	}
+}
+
+func drainAndSend(assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool, reqs [config.N_FLOORS][config.N_BUTTONS]bool) {
+	select {
+	case <-assignmentCh:
+	default:
+	}
+	assignmentCh <- reqs
 }
