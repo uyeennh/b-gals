@@ -5,7 +5,6 @@ import (
 	"heis/order"
 )
 
-
 // ElevatorState represents the current physical state of one elevator.
 // This is what gets shared across the network so other elevators
 // know where each elevator is and what it is doing.
@@ -25,15 +24,15 @@ type WorldView struct {
 
 // InitWorldView creates a fresh WorldView for this elevator on startup.
 func InitWorldView(id string, numFloors int) WorldView {
-	wv := WorldView{
+		worldView := WorldView{
 		HallOrders: order.NewHallOrders(numFloors),
 		States:     make(map[string]ElevatorState),
 	}
-	wv.States[id] = ElevatorState{
+	worldView.States[id] = ElevatorState{
 		Floor:     -1,
 		Direction: elevtype.D_Stop,
 		Behaviour: elevtype.B_Idle,
 		CabOrders: order.NewCabOrders(numFloors),
 	}
-	return wv
+	return worldView
 }

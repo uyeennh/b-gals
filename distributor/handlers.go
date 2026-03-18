@@ -7,55 +7,55 @@ import (
 	"heis/worldview"
 )
 
-func handleButtonPress(id string, wv worldview.WorldView, btn elevio.ButtonEvent, peersAlive []string) worldview.WorldView {
+func handleButtonPress(id string, worldView worldview.WorldView, buttonEvent elevio.ButtonEvent, peersAlive []string) worldview.WorldView {
 	alone := isSoleElevator(peersAlive)
 
-	switch btn.Button {
+	switch buttonEvent.Button {
 	case elevio.BT_Cab:
-		state := wv.States[id]
-		if state.CabOrders[btn.Floor].Status == order.OS_None ||
-			state.CabOrders[btn.Floor].Status == order.OS_Unknown {
+		state := worldView.States[id]
+		if state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusNone ||
+			state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusUnknown {
 			// cab orders are private
-			state.CabOrders[btn.Floor].Status = order.OS_Confirmed
-			state.CabOrders[btn.Floor].Barrier = []string{}
-			wv.States[id] = state
+			state.CabOrders[buttonEvent.Floor].Status = order.OrderStatusConfirmed
+			state.CabOrders[buttonEvent.Floor].Barrier = []string{}
+			worldView.States[id] = state
 			saveIfCrash.SaveCabOrders(id, state.CabOrders)
 		}
 	default:
-		b := int(btn.Button)
-		if wv.HallOrders[btn.Floor][b].Status == order.OS_None ||
-			wv.HallOrders[btn.Floor][b].Status == order.OS_Unknown {
-			wv.HallOrders[btn.Floor][b].Status = order.OS_Unconfirmed
-			wv.HallOrders[btn.Floor][b].Barrier = []string{id}
+		b := int(buttonEvent.Button)
+		if worldView.HallOrders[buttonEvent.Floor][b].Status == order.OrderStatusNone ||
+			worldView.HallOrders[buttonEvent.Floor][b].Status == order.OrderStatusUnknown {
+			worldView.HallOrders[buttonEvent.Floor][b].Status = order.OrderStatusUnconfirmed
+			worldView.HallOrders[buttonEvent.Floor][b].Barrier = []string{id}
 			if alone {
-				wv.HallOrders[btn.Floor][b].Status = order.OS_Confirmed
-				wv.HallOrders[btn.Floor][b].Barrier = []string{}
+				worldView.HallOrders[buttonEvent.Floor][b].Status = order.OrderStatusConfirmed
+				worldView.HallOrders[buttonEvent.Floor][b].Barrier = []string{}
 			}
 		}
 	}
-	return wv
+	return worldView
 }
 
-func handleFinishedOrder(id string, wv worldview.WorldView, btn elevio.ButtonEvent, peersAlive []string) worldview.WorldView {
+func handleFinishedOrder(id string, worldView worldview.WorldView, buttonEvent elevio.ButtonEvent, peersAlive []string) worldview.WorldView {
 	alone := isSoleElevator(peersAlive)
 
-	switch btn.Button {
+	switch buttonEvent.Button {
 	case elevio.BT_Cab:
-		state := wv.States[id]
-		state.CabOrders[btn.Floor].Status = order.OS_None
-		state.CabOrders[btn.Floor].Barrier = []string{}
-		wv.States[id] = state
+		state := worldView.States[id]
+		state.CabOrders[buttonEvent.Floor].Status = order.OrderStatusNone
+		state.CabOrders[buttonEvent.Floor].Barrier = []string{}
+		worldView.States[id] = state
 		saveIfCrash.SaveCabOrders(id, state.CabOrders)
 	default:
-		b := int(btn.Button)
-		wv.HallOrders[btn.Floor][b].Status = order.OS_Finished
-		wv.HallOrders[btn.Floor][b].Barrier = []string{id}
+		b := int(buttonEvent.Button)
+		worldView.HallOrders[buttonEvent.Floor][b].Status = order.OrderStatusFinished
+		worldView.HallOrders[buttonEvent.Floor][b].Barrier = []string{id}
 		if alone {
-			wv.HallOrders[btn.Floor][b].Status = order.OS_None
-			wv.HallOrders[btn.Floor][b].Barrier = []string{}
+			worldView.HallOrders[buttonEvent.Floor][b].Status = order.OrderStatusNone
+			worldView.HallOrders[buttonEvent.Floor][b].Barrier = []string{}
 		}
 	}
-	return wv
+	return worldView
 }
 
 func isSoleElevator(peersAlive []string) bool {

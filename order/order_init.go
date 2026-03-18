@@ -2,7 +2,7 @@ package order
 
 func NewOrder() Order {
 	return Order{
-		Status:  OS_Unknown,
+		Status:  OrderStatusUnknown,
 		Barrier: make([]string, 0),
 	}
 }

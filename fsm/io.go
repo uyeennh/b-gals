@@ -16,7 +16,7 @@ type ElevatorIO interface {
 	SetMotorDirection(dir elevtype.Dirn)
 	SetDoorOpenLamp(on bool)
 	SetFloorIndicator(floor int)
-	SetButtonLamp(floor int, btn elevtype.Button, on bool)
+	SetButtonLamp(floor int, buttonEvent elevtype.Button, on bool)
 }
 
 
@@ -53,14 +53,14 @@ func (io *IO) SetFloorIndicator(floor int) {
 	io.drv.SetFloorIndicator(floor)
 }
 
-func (io *IO) SetButtonLamp(floor int, btn elevtype.Button, on bool) {
+func (io *IO) SetButtonLamp(floor int, buttonEvent elevtype.Button, on bool) {
 	if io.drv == nil {
 		return
 	}
 	if floor < 0 || floor >= config.N_FLOORS {
 		return
 	}
-	io.drv.SetButtonLamp(buttonToDriver(btn), floor, on)
+	io.drv.SetButtonLamp(buttonToDriver(buttonEvent), floor, on)
 }
 
 

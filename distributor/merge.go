@@ -1,8 +1,8 @@
 package distributor
 
 import (
-	"heis/worldview"
 	"heis/order"
+	"heis/worldview"
 )
 
 func mergeHallOrders(id string, local [][2]order.Order, received [][2]order.Order, peersAlive []string) [][2]order.Order {
@@ -57,22 +57,22 @@ func mergeStates(
 	return localStates
 }
 
-func copyWorldView(wv  worldview.WorldView)  worldview.WorldView {
-	copiedWV :=  worldview.WorldView{
-		HallOrders: make([][2]order.Order, len(wv.HallOrders)),
+func copyWorldView(worldView worldview.WorldView) worldview.WorldView {
+	copiedWorldView := worldview.WorldView{
+		HallOrders: make([][2]order.Order, len(worldView.HallOrders)),
 		States:     make(map[string]worldview.ElevatorState),
 	}
 	// Deep copy hall orders
-	for f := range wv.HallOrders {
-		for b := range wv.HallOrders[f] {
-			copiedWV.HallOrders[f][b] = order.Order{
-				Status:  wv.HallOrders[f][b].Status,
-				Barrier: order.CopyBarrier(wv.HallOrders[f][b].Barrier),
+	for f := range worldView.HallOrders {
+		for b := range worldView.HallOrders[f] {
+			copiedWorldView.HallOrders[f][b] = order.Order{
+				Status:  worldView.HallOrders[f][b].Status,
+				Barrier: order.CopyBarrier(worldView.HallOrders[f][b].Barrier),
 			}
 		}
 	}
 	// Deep copy states
-	for id, state := range wv.States {
+	for id, state := range worldView.States {
 		newCabOrders := make([]order.Order, len(state.CabOrders))
 		for f, o := range state.CabOrders {
 			newCabOrders[f] = order.Order{
@@ -86,9 +86,9 @@ func copyWorldView(wv  worldview.WorldView)  worldview.WorldView {
 			Behaviour: state.Behaviour,
 			CabOrders: newCabOrders,
 		}
-		copiedWV.States[id] = copiedState
+		copiedWorldView.States[id] = copiedState
 	}
-	return copiedWV
+	return copiedWorldView
 }
 
 func copyHallOrders(orders [][2]order.Order) [][2]order.Order {

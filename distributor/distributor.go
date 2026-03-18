@@ -29,17 +29,17 @@ func Distributor(
 	assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool,
 	peerUpdateCh <-chan peers.PeerUpdate,
 ) {
-	localWV := worldview.InitWorldView(id, config.N_FLOORS)
+	localWorldView := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
 	for f := range savedCabOrders {
-		if savedCabOrders[f].Status >= order.OS_Unconfirmed {
-			savedCabOrders[f].Status = order.OS_Confirmed
+		if savedCabOrders[f].Status >= order.OrderStatusUnconfirmed {
+			savedCabOrders[f].Status = order.OrderStatusConfirmed
 			savedCabOrders[f].Barrier = []string{}
 		}
 	}
-	restoredState := localWV.States[id]
+	restoredState := localWorldView.States[id]
 	restoredState.CabOrders = savedCabOrders
-	localWV.States[id] = restoredState
+	localWorldView.States[id] = restoredState
 
 	peersAlive := []string{id}
 
@@ -63,7 +63,7 @@ func Distributor(
 		case <-broadcastTicker.C:
 			msgTx <- networkMessage{
 				SenderID:  id,
-				WorldView: copyWorldView(localWV),
+				WorldView: copyWorldView(localWorldView),
 			}
 
 		case msg := <-msgRx:
@@ -71,43 +71,43 @@ func Distributor(
 				continue
 			}
 
-			localWV.HallOrders = mergeHallOrders(
+			localWorldView.HallOrders = mergeHallOrders(
 				id,
-				localWV.HallOrders,
+				localWorldView.HallOrders,
 				msg.WorldView.HallOrders,
 				peersAlive,
 			)
 
-			localWV.States = mergeStates(
+			localWorldView.States = mergeStates(
 				id,
-				localWV.States,
+				localWorldView.States,
 				msg.SenderID,
 				msg.WorldView.States,
 				peersAlive,
 			)
 
-			computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
+			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
-		case btn := <-drvButtons:
-			localWV = handleButtonPress(id, localWV, btn, peersAlive)
-			computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
-		case btn := <-finReqCh:
-			localWV = handleFinishedOrder(id, localWV, btn, peersAlive)
+		case buttonEvent := <-drvButtons:
+			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
+			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+		case buttonEvent := <-finReqCh:
+			localWorldView = handleFinishedOrder(id, localWorldView, buttonEvent, peersAlive)
 			// Self-merge so our own barrier advances immediately
-			localWV.HallOrders = mergeHallOrders(
+			localWorldView.HallOrders = mergeHallOrders(
 				id,
-				localWV.HallOrders,
-				copyHallOrders(localWV.HallOrders),
+				localWorldView.HallOrders,
+				copyHallOrders(localWorldView.HallOrders),
 				peersAlive,
 			)
-			computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
+			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case state := <-stateCh:
-			s := localWV.States[id]
+			s := localWorldView.States[id]
 			s.Floor = state.Floor
 			s.Direction = state.Direction
 			s.Behaviour = state.Behaviour
-			localWV.States[id] = s
+			localWorldView.States[id] = s
 			//computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
 
 		case pu := <-peerUpdateCh:
@@ -119,9 +119,9 @@ func Distributor(
 				peersAlive = append(peersAlive, id)
 			}
 			fmt.Println("Peers alive:", peersAlive)
-			computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
+			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 		case <-lampTicker.C:
-			updateButtonLamps(id, localWV)
+			updateButtonLamps(id, localWorldView)
 		}
 	}
 }
