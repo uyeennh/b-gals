@@ -34,8 +34,8 @@ func Distributor(
 	localWorldView := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
 	for f := range savedCabOrders {
-		if savedCabOrders[f].Status >= order.OS_Unconfirmed {
-			savedCabOrders[f].Status = order.OS_Confirmed
+		if savedCabOrders[f].Status >= order.OrderStatusUnconfirmed {
+			savedCabOrders[f].Status = order.OrderStatusConfirmed
 			savedCabOrders[f].Barrier = []string{}
 		}
 	}
@@ -111,7 +111,7 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			//computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
