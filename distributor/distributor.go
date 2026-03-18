@@ -1,3 +1,4 @@
+
 package distributor
 
 import (
@@ -22,6 +23,7 @@ type networkMessage struct {
 	WorldView worldview.WorldView
 }
 
+
 func Distributor(
 	id string,
 	stateCh <-chan worldview.ElevatorState,
@@ -32,8 +34,8 @@ func Distributor(
 	localWorldView := worldview.InitWorldView(id, config.N_FLOORS)
 	savedCabOrders := saveIfCrash.LoadCabOrders(id, config.N_FLOORS)
 	for f := range savedCabOrders {
-		if savedCabOrders[f].Status >= order.OrderStatusUnconfirmed {
-			savedCabOrders[f].Status = order.OrderStatusConfirmed
+		if savedCabOrders[f].Status >= order.OS_Unconfirmed {
+			savedCabOrders[f].Status = order.OS_Confirmed
 			savedCabOrders[f].Barrier = []string{}
 		}
 	}
@@ -43,13 +45,13 @@ func Distributor(
 
 	peersAlive := []string{id}
 
-	msgTx := make(chan networkMessage, 1)
-	msgRx := make(chan networkMessage)
-	go bcast.Transmitter(config.PortDistributor, msgTx)
-	go bcast.Receiver(config.PortDistributor, msgRx)
+	messageTx := make(chan networkMessage, 1)
+	messageRx := make(chan networkMessage)
+	go bcast.Transmitter(config.PortDistributor, messageTx)
+	go bcast.Receiver(config.PortDistributor, messageRx)
 
-	drvButtons := make(chan elevio.ButtonEvent)
-	go elevio.PollButtons(drvButtons)
+	driverButtonCh := make(chan elevio.ButtonEvent)
+	go elevio.PollButtons(driverButtonCh)
 
 	broadcastTicker := time.NewTicker(broadcastInterval)
 	defer broadcastTicker.Stop()
@@ -61,38 +63,39 @@ func Distributor(
 		select {
 
 		case <-broadcastTicker.C:
-			msgTx <- networkMessage{
+			messageTx <- networkMessage{
 				SenderID:  id,
 				WorldView: copyWorldView(localWorldView),
 			}
 
-		case msg := <-msgRx:
-			if msg.SenderID == id {
+		case message := <-messageRx:
+			if message.SenderID == id {
 				continue
 			}
 
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
-				msg.WorldView.HallOrders,
+				message.WorldView.HallOrders,
 				peersAlive,
 			)
 
 			localWorldView.States = mergeStates(
 				id,
 				localWorldView.States,
-				msg.SenderID,
-				msg.WorldView.States,
+				message.SenderID,
+				message.WorldView.States,
 				peersAlive,
 			)
 
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
-		case buttonEvent := <-drvButtons:
+		case buttonEvent := <-driverButtonCh:
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-		case buttonEvent := <-finReqCh:
-			localWorldView = handleFinishedOrder(id, localWorldView, buttonEvent, peersAlive)
+
+		case completedOrder := <-finReqCh:
+			localWorldView = handleFinishedOrder(id, localWorldView, completedOrder, peersAlive)
 			// Self-merge so our own barrier advances immediately
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
@@ -103,12 +106,12 @@ func Distributor(
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case state := <-stateCh:
-			s := localWorldView.States[id]
-			s.Floor = state.Floor
-			s.Direction = state.Direction
-			s.Behaviour = state.Behaviour
-			localWorldView.States[id] = s
-			//computeAndSendAssignment(id, localWV, peersAlive, assignmentCh)
+			elevatorState := localWorldView.States[id]
+			elevatorState.Floor = state.Floor
+			elevatorState.Direction = state.Direction
+			elevatorState.Behaviour = state.Behaviour
+			localWorldView.States[id] = elevatorState
+			//computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
@@ -120,10 +123,9 @@ func Distributor(
 			}
 			fmt.Println("Peers alive:", peersAlive)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+
 		case <-lampTicker.C:
 			updateButtonLamps(id, localWorldView)
 		}
 	}
 }
-
-
