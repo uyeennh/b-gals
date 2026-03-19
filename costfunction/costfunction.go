@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"heis/config"
+	"fmt"
 )
 
 
@@ -41,6 +42,8 @@ func Compute(
 	if err !=nil {
 		return nil, false
 	}
+	// ADD THIS:
+    fmt.Printf("[HRA input for %s] %s\n", myID, string(jsonBytes))
 
 
 	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
