@@ -12,7 +12,13 @@ import (
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
-    hallReqs := extractConfirmedHallRequests(worldView)
+    for _, peer := range peersAlive {
+        if peer < id {
+            return
+        }
+    }
+	
+	hallReqs := extractConfirmedHallRequests(worldView)
     states := buildHRAStates(worldView, peersAlive)
     assigned, ok := costfunction.Compute(id, hallReqs, states)
     if !ok {
