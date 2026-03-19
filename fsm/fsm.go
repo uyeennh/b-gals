@@ -54,9 +54,7 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
-
-    }
-
+		
 			case ES_DoorOpen:
 				setAllLights(io, e)
 			}
