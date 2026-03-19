@@ -7,23 +7,40 @@ import (
 	"heis/elevtype"
 	"heis/order"
 	"heis/worldview"
+	"fmt"
+	
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
-	hallReqs := extractConfirmedHallRequests(worldView)
-	states := buildHRAStates(worldView, peersAlive)
-	assigned, ok := costfunction.Compute(id, hallReqs, states)
-	if !ok {
-		return
-	}
-	reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
+    hallReqs := extractConfirmedHallRequests(worldView)
+    states := buildHRAStates(worldView, peersAlive)
+    assigned, ok := costfunction.Compute(id, hallReqs, states)
+    if !ok {
+        return
+    }
 
-	select {
-	case <-assignmentCh:
-	default:
-	}
-	assignmentCh <- reqs
+    // ADD THIS:
+    for f, pair := range assigned {
+        if pair[0] || pair[1] {
+            fmt.Printf("[%s] HRA assigned me: floor=%d up=%v dn=%v\n", id, f, pair[0], pair[1])
+        }
+    }
 
+    reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
+    
+    // AND THIS:
+    for f := range reqs {
+        if reqs[f][0] || reqs[f][1] || reqs[f][2] {
+            fmt.Printf("[%s] sending to FSM: floor=%d HallUp=%v HallDown=%v Cab=%v\n", 
+                id, f, reqs[f][0], reqs[f][1], reqs[f][2])
+        }
+    }
+
+    select {
+    case <-assignmentCh:
+    default:
+    }
+    assignmentCh <- reqs
 }
 
 func extractConfirmedHallRequests(worldView worldview.WorldView) [][2]bool {
