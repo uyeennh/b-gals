@@ -1,3 +1,4 @@
+
 package distributor
 
 import (
@@ -21,6 +22,7 @@ type networkMessage struct {
 	SenderID  string
 	WorldView worldview.WorldView
 }
+
 
 func Distributor(
 	id string,
@@ -61,11 +63,6 @@ func Distributor(
 		select {
 
 		case <-broadcastTicker.C:
-			// Drain the channel before sending so we never block here
-			select {
-			case <-messageTx:
-			default:
-			}
 			messageTx <- networkMessage{
 				SenderID:  id,
 				WorldView: copyWorldView(localWorldView),
@@ -75,12 +72,14 @@ func Distributor(
 			if message.SenderID == id {
 				continue
 			}
+
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
 				message.WorldView.HallOrders,
 				peersAlive,
 			)
+
 			localWorldView.States = mergeStates(
 				id,
 				localWorldView.States,
@@ -88,6 +87,7 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
+
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case buttonEvent := <-driverButtonCh:
@@ -111,22 +111,13 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			// CHANGE 1: uncommented this so the FSM gets updated
-			// assignments when our own floor/direction changes
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-			// CHANGE 2: immediately broadcast our new state so other
-			// elevators know we are moving before they compute assignments
-			select {
-			case <-messageTx:
-			default:
-			}
-			messageTx <- networkMessage{
-				SenderID:  id,
-				WorldView: copyWorldView(localWorldView),
-			}
+			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
+			// Always make sure our own ID is in the peer list
+			// peers.Receiver never includes ourselves because we never
+			// hear our own broadcast — so we add ourselves manually here
 			if !order.ContainsID(peersAlive, id) {
 				peersAlive = append(peersAlive, id)
 			}
