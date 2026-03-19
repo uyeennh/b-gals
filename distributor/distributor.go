@@ -1,3 +1,4 @@
+
 package distributor
 
 import (
@@ -21,6 +22,7 @@ type networkMessage struct {
 	SenderID  string
 	WorldView worldview.WorldView
 }
+
 
 func Distributor(
 	id string,
@@ -61,15 +63,10 @@ func Distributor(
 		select {
 
 		case <-broadcastTicker.C:
-			msg := networkMessage{
+			messageTx <- networkMessage{
 				SenderID:  id,
 				WorldView: copyWorldView(localWorldView),
 			}
-			select {
-			case <-messageTx:
-			default:
-			}
-			messageTx <- msg
 
 		case message := <-messageRx:
 			if message.SenderID == id {
@@ -114,16 +111,7 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-			// Immediately tell everyone our new state
-			select {
-			case <-messageTx:
-			default:
-			}
-			messageTx <- networkMessage{
-				SenderID:  id,
-				WorldView: copyWorldView(localWorldView),
-			}
+			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
