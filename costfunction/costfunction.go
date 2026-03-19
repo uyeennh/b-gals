@@ -1,18 +1,13 @@
-
-
 package costfunction
-
 
 //should you use this somewhere? cmd := exec.Command(config.HRAPath)
 
 import (
 	"encoding/json"
+	"heis/config"
 	"os/exec"
 	"runtime"
-	"heis/config"
-	"fmt"
 )
-
 
 type HRAElevState struct {
 	Behavior    string `json:"behaviour"`
@@ -21,45 +16,32 @@ type HRAElevState struct {
 	CabRequests []bool `json:"cabRequests"`
 }
 
-
 type HRAInput struct {
-    HallRequests    [][2]bool                   `json:"hallRequests"`
-    States          map[string]HRAElevState     `json:"states"`
+	HallRequests [][2]bool               `json:"hallRequests"`
+	States       map[string]HRAElevState `json:"states"`
 }
 
 func Compute(
-	myID 			string, 
-	hallRequests 	[][2]bool, 
-	states 			map[string]HRAElevState,
-)([][2]bool, bool){
+	myID string,
+	hallRequests [][2]bool,
+	states map[string]HRAElevState,
+) ([][2]bool, bool) {
 
-	input :=HRAInput{
-		HallRequests: 	hallRequests,
-		States: 		states,
+	input := HRAInput{
+		HallRequests: hallRequests,
+		States:       states,
 	}
 
 	jsonBytes, err := json.Marshal(input)
-	if err !=nil {
+	if err != nil {
 		return nil, false
 	}
-	hasHallReqs := false
-	for _, pair := range hallRequests {
-    	if pair[0] || pair[1] {
-        	hasHallReqs = true
-        	break
-    	}
-	}	
-	if hasHallReqs {
-    	fmt.Printf("[HRA input for %s] %s\n", myID, string(jsonBytes))
-	}
-
 
 	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
 	if err != nil {
 		return nil, false
 	}
-	
-	
+
 	var result map[string][][2]bool
 	if err := json.Unmarshal(rawOutput, &result); err != nil {
 		return nil, false
@@ -67,23 +49,24 @@ func Compute(
 
 	assigned, ok := result[myID]
 	if !ok {
-		return nil, false 
+		return nil, false
 	}
 
 	return assigned, true
-	
+
 }
 func executableName() string {
-    switch runtime.GOOS {
-    case "linux":
-        return config.HRAPath + "hall_request_assigner"
-    case "windows":
-        return config.HRAPath + "hall_request_assigner.exe"
-    default:
-        panic("unsupported OS: " + runtime.GOOS)
-    }
+	switch runtime.GOOS {
+	case "linux":
+		return config.HRAPath + "hall_request_assigner"
+	case "windows":
+		return config.HRAPath + "hall_request_assigner.exe"
+	default:
+		panic("unsupported OS: " + runtime.GOOS)
+	}
 }
-/* 
+
+/*
 hraExecutable := ""
     switch runtime.GOOS {
         case "linux":   hraExecutable  = "hall_request_assigner"
