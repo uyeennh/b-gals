@@ -85,12 +85,12 @@ func ShouldStop(e Elevator) bool {
 	}
 }
 
-func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {  
+func collectClearedEvents(e *Elevator, floor int) ([]elevio.ButtonEvent, bool) {  
     if floor < 0 || floor >= config.N_FLOORS {
-        return nil
+        return nil, false
     }
 	var events []elevio.ButtonEvent
-	
+	needsDirectionChange := false
 
     if e.requests[floor][B_Cab] {
         events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_Cab})
@@ -104,8 +104,7 @@ func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
             e.requests[floor][B_HallUp] = false
         }
         if !requestsAbove(*e, floor) && e.requests[floor][B_HallDown] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallDown})
-            e.requests[floor][B_HallDown] = false
+            needsDirectionChange = true
         }
     case D_Down:
         if e.requests[floor][B_HallDown] {
@@ -113,8 +112,7 @@ func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
             e.requests[floor][B_HallDown] = false
         }
         if !requestsBelow(*e, floor) && e.requests[floor][B_HallUp] {
-            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallUp})
-            e.requests[floor][B_HallUp] = false
+            needsDirectionChange = true
         }
     case D_Stop:
         for b := Button(0); b < config.N_BUTTONS; b++ {
@@ -124,13 +122,36 @@ func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
             }
         }
     }
-	return events
+	return events, needsDirectionChange
+}
+
+
+// Phase 2: clears the opposite-direction call after second door open
+func collectDirectionChangeClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
+    if floor < 0 || floor >= config.N_FLOORS {
+        return nil
+    }
+    var events []elevio.ButtonEvent
+    switch e.dirn {
+    case D_Up:
+        if e.requests[floor][B_HallDown] {
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallDown})
+            e.requests[floor][B_HallDown] = false
+        }
+    case D_Down:
+        if e.requests[floor][B_HallUp] {
+            events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallUp})
+            e.requests[floor][B_HallUp] = false
+        }
+    }
+    return events
 }
 
 func ClearAtFloor(e *Elevator, floor int, finReqCh chan<- elevio.ButtonEvent) {
-	for _, ev := range collectClearedEvents(e, floor) {
-		finReqCh <- ev
-	}
+    evs, _ := collectClearedEvents(e, floor)
+    for _, ev := range evs {
+        finReqCh <- ev
+    }
 }
 
 func flushPendingFinReqs(pending []elevio.ButtonEvent, finReqCh chan<- elevio.ButtonEvent) {

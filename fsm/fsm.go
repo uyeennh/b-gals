@@ -14,7 +14,6 @@ func RunFSM(
 	stateCh chan<- ElevatorStateMsg,
 	floorCh <-chan int,
 	obstrCh <-chan bool,
-	//directionChangePending bool,
 ) {
 	e := elevatorInit()
 	doorTimer := NewTimer()
@@ -32,7 +31,6 @@ func RunFSM(
 	e.state = ES_Idle
 	stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
-
 	for {
 		select {
 
@@ -42,12 +40,15 @@ func RunFSM(
 			case ES_Idle:
 				pair := ChooseDirection(e)
 				e.dirn, e.state = pair.dirn, pair.state
-
 				switch e.state {
 				case ES_DoorOpen:
 					io.SetDoorOpenLamp(true)
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
-					pendingFinReqs = collectClearedEvents(&e, e.floor)
+					var needsDirChange bool
+					pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
+					if needsDirChange {
+						e.directionChangePending = true
+					}
 					setAllLights(io, e)
 				case ES_Moving:
 					io.SetMotorDirection(e.dirn)
@@ -56,12 +57,10 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
-				//e.requests = assignments
-		
+				// requests updated above, let floorCh handle stopping
 			case ES_DoorOpen:
 				setAllLights(io, e)
 			}
-
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 		case newFloor := <-floorCh:
@@ -70,11 +69,11 @@ func RunFSM(
 			io.SetFloorIndicator(newFloor)
 
 			fmt.Printf("[fsm] floor=%d state=%v dirn=%v shouldStop=%v HallUp=%v HallDown=%v Cab=%v\n",
-        		e.floor, e.state, e.dirn, 
-        		ShouldStop(e),
-        		e.requests[e.floor][B_HallUp],
-        		e.requests[e.floor][B_HallDown],
-        		e.requests[e.floor][B_Cab])
+				e.floor, e.state, e.dirn,
+				ShouldStop(e),
+				e.requests[e.floor][B_HallUp],
+				e.requests[e.floor][B_HallDown],
+				e.requests[e.floor][B_Cab])
 
 			if e.state != ES_Moving {
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
@@ -84,14 +83,17 @@ func RunFSM(
 			if ShouldStop(e) {
 				io.SetMotorDirection(D_Stop)
 				io.SetDoorOpenLamp(true)
-				pendingFinReqs = collectClearedEvents(&e, e.floor)
+				var needsDirChange bool
+				pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
+				if needsDirChange {
+					e.directionChangePending = true
+				}
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				setAllLights(io, e)
 				e.state = ES_DoorOpen
 			} else {
-				     motorTimer.Start(config.MotorLossTimeout)
-			}	
-
+				motorTimer.Start(config.MotorLossTimeout)
+			}
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 		case <-doorTimer.C():
@@ -101,7 +103,6 @@ func RunFSM(
 
 			if obstrActive {
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
-
 				if obstrCounter == config.ObstrTripsBeforeFloorInvalid {
 					obstrStoredFloor = e.floor
 					e.floor = -1
@@ -110,16 +111,37 @@ func RunFSM(
 				obstrCounter++
 				continue
 			}
-			if e.floor == -1 &&obstrStoredFloor != -1 {
+
+			if e.floor == -1 && obstrStoredFloor != -1 {
 				e.floor = obstrStoredFloor
 				obstrStoredFloor = -1
 			}
-			if pendingFinReqs == nil && e.floor >= 0 {
-				pendingFinReqs = collectClearedEvents(&e, e.floor)
-			}
 
-			flushPendingFinReqs(pendingFinReqs, finReqCh)
-			pendingFinReqs = nil
+			if e.directionChangePending {
+				// Second door open: clear the opposite-direction call now
+				e.directionChangePending = false
+				dirChangeEvs := collectDirectionChangeClearedEvents(&e, e.floor)
+				flushPendingFinReqs(dirChangeEvs, finReqCh)
+			} else {
+				if pendingFinReqs == nil && e.floor >= 0 {
+					var needsDirChange bool
+					pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
+					if needsDirChange {
+						e.directionChangePending = true
+					}
+				}
+				flushPendingFinReqs(pendingFinReqs, finReqCh)
+				pendingFinReqs = nil
+
+				if e.directionChangePending {
+					// Keep door open another 3 seconds
+					io.SetDoorOpenLamp(true)
+					doorTimer.Start(e.elevConfig.DoorOpenDuration)
+					setAllLights(io, e)
+					stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
+					continue
+				}
+			}
 
 			pair := ChooseDirection(e)
 			e.dirn, e.state = pair.dirn, pair.state
@@ -128,19 +150,20 @@ func RunFSM(
 			case ES_DoorOpen:
 				io.SetDoorOpenLamp(true)
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
-				pendingFinReqs = collectClearedEvents(&e, e.floor)
+				var needsDirChange bool
+				pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
+				if needsDirChange {
+					e.directionChangePending = true
+				}
 				setAllLights(io, e)
-
 			case ES_Moving:
 				io.SetDoorOpenLamp(false)
 				io.SetMotorDirection(e.dirn)
 				motorTimer.Start(config.MotorLossTimeout)
-
 			case ES_Idle:
 				io.SetDoorOpenLamp(false)
 				io.SetMotorDirection(D_Stop)
 			}
-
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 
 		case <-motorTimer.C():
@@ -149,10 +172,9 @@ func RunFSM(
 			e.state = ES_Moving
 			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
 			io.SetMotorDirection(D_Up)
-		
+
 		case obstr := <-obstrCh:
 			obstrActive = obstr
-
 			if obstr {
 				if e.state == ES_DoorOpen {
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
@@ -189,13 +211,11 @@ func findFloor(io ElevatorIO, floorCh <-chan int) int {
 		case floor := <-floorCh:
 			io.SetMotorDirection(D_Stop)
 			return floor
-		
 		case <-t.C:
-			if ! reversed {
+			if !reversed {
 				io.SetMotorDirection(D_Down)
 				reversed = true
-			} 
+			}
 		}
 	}
 }
-				

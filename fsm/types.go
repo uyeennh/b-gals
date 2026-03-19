@@ -36,6 +36,7 @@ type Elevator struct{
 	requests 	[config.N_FLOORS][config.N_BUTTONS]bool
 	state 		ElevatorState
 	elevConfig	ElevatorConfig
+	directionChangePending bool
 }
 type DirnBehaviourPair struct{
 	dirn	Dirn
