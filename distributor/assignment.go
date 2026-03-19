@@ -8,7 +8,7 @@ import (
 	"heis/order"
 	"heis/worldview"
 	"fmt"
-	
+
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
@@ -73,7 +73,7 @@ func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[stri
         for f, o := range s.CabOrders {
             cabReqs[f] = o.Status == order.OrderStatusConfirmed
         }
-
+/*
         if s.Behaviour == elevtype.B_Moving || s.Direction != elevtype.D_Stop {
             switch s.Direction {
             case elevtype.D_Up:
@@ -92,7 +92,7 @@ func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[stri
                 }
             }
         }
-
+*/
         states[id] = costfunction.HRAElevState{
             Behavior:    behaviourToString(s.Behaviour),
             Floor:       s.Floor,

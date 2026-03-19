@@ -115,12 +115,16 @@ func collectClearedEvents(e *Elevator, floor int) ([]elevio.ButtonEvent, bool) {
             needsDirectionChange = true
         }
     case D_Stop:
-        for b := Button(0); b < config.N_BUTTONS; b++ {
-            if e.requests[floor][b] {
-                events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.ButtonType(b)})
-                e.requests[floor][b] = false
-            }
-        }
+		if e.requests[floor][B_HallUp] {
+			events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallUp})
+			e.requests[floor][B_HallUp] = false
+			if e.requests[floor][B_HallDown] {
+				needsDirectionChange = true
+			}
+		} else if e.requests[floor][B_HallDown] {
+			events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_HallDown})
+			e.requests[floor][B_HallDown] = false
+		}
     }
 	return events, needsDirectionChange
 }
