@@ -57,7 +57,7 @@ func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[stri
             cabReqs[f] = o.Status == order.OrderStatusConfirmed
         }
 
-        if s.Behaviour == elevtype.B_Moving {
+        if s.Behaviour == elevtype.B_Moving || s.Direction != elevtype.D_Stop {
             switch s.Direction {
             case elevtype.D_Up:
                 for f := s.Floor + 1; f < config.N_FLOORS; f++ {

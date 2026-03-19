@@ -94,6 +94,11 @@ func Distributor(
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case buttonEvent := <-driverButtonCh:
+			if buttonEvent.Button == elevio.BT_Cab {
+        		s := localWorldView.States[id]
+        		fmt.Printf("[distributor] Cab press floor %d. My state: floor=%d dir=%v behaviour=%v\n",
+            		buttonEvent.Floor, s.Floor, s.Direction, s.Behaviour)
+    		}
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
