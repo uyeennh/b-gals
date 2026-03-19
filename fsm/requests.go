@@ -199,3 +199,27 @@ func ClearNow(e Elevator, ButtonFloor int, ButtonType Button) bool {
 			ButtonType == B_Cab)
 
 }
+
+func mergeRequestsInFlight(e Elevator, newAssignments [config.N_FLOORS][config.N_BUTTONS]bool) [config.N_FLOORS][config.N_BUTTONS]bool {
+    merged := newAssignments
+    for f := 0; f < config.N_FLOORS; f++ {
+        // Only protect floors ahead of us in travel direction
+        floorIsAhead := (e.dirn == D_Up && f >= e.floor) || 
+                        (e.dirn == D_Down && f <= e.floor)
+        if !floorIsAhead {
+            continue
+        }
+        // Protect cab calls unconditionally — those are ours forever
+        if e.requests[f][B_Cab] {
+            merged[f][B_Cab] = true
+        }
+        // Protect hall calls that match our direction
+        if e.dirn == D_Up && e.requests[f][B_HallUp] {
+            merged[f][B_HallUp] = true
+        }
+        if e.dirn == D_Down && e.requests[f][B_HallDown] {
+            merged[f][B_HallDown] = true
+        }
+    }
+    return merged
+}

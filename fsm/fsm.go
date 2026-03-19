@@ -54,11 +54,11 @@ func RunFSM(
 					io.SetMotorDirection(e.dirn)
 					motorTimer.Start(config.MotorLossTimeout)
 				case ES_Idle:
-					// nothing to do
+
 				}
+				
 			case ES_Moving:
-				e.requests = assignments //should be removed if we  get it to work
-				// requests updated above, let floorCh handle stopping
+				e.requests = mergeRequestsInFlight(e, assignments) 
 			case ES_DoorOpen:
 				setAllLights(io, e)
 			}
