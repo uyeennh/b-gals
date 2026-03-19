@@ -36,28 +36,54 @@ func extractConfirmedHallRequests(worldView worldview.WorldView) [][2]bool {
 }
 
 func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[string]costfunction.HRAElevState {
-	states := make(map[string]costfunction.HRAElevState)
-	for id, s := range worldView.States {
-		// Skip elevators with invalid floor
-		if s.Floor < 0 {
-			continue
-		}
-		// Skip elevators that are not currently alive on the network
-		if !order.ContainsID(peersAlive, id) {
-			continue
-		}
-		cabReqs := make([]bool, config.N_FLOORS)
-		for f, o := range s.CabOrders {
-			cabReqs[f] = o.Status == order.OrderStatusConfirmed
-		}
-		states[id] = costfunction.HRAElevState{
-			Behavior:    behaviourToString(s.Behaviour),
-			Floor:       s.Floor,
-			Direction:   dirnToString(s.Direction),
-			CabRequests: cabReqs,
-		}
-	}
-	return states
+    states := make(map[string]costfunction.HRAElevState)
+
+    confirmedHallOrders := make([][2]bool, config.N_FLOORS)
+    for f := range worldView.HallOrders {
+        confirmedHallOrders[f][0] = worldView.HallOrders[f][0].Status == order.OrderStatusConfirmed
+        confirmedHallOrders[f][1] = worldView.HallOrders[f][1].Status == order.OrderStatusConfirmed
+    }
+
+    for id, s := range worldView.States {
+        if s.Floor < 0 {
+            continue
+        }
+        if !order.ContainsID(peersAlive, id) {
+            continue
+        }
+
+        cabReqs := make([]bool, config.N_FLOORS)
+        for f, o := range s.CabOrders {
+            cabReqs[f] = o.Status == order.OrderStatusConfirmed
+        }
+
+        if s.Behaviour == elevtype.B_Moving {
+            switch s.Direction {
+            case elevtype.D_Up:
+                for f := s.Floor + 1; f < config.N_FLOORS; f++ {
+                    if confirmedHallOrders[f][int(elevtype.B_HallUp)] {
+                        cabReqs[f] = true
+                        break 
+                    }
+                }
+            case elevtype.D_Down:
+                for f := s.Floor - 1; f >= 0; f-- {
+                    if confirmedHallOrders[f][int(elevtype.B_HallDown)] {
+                        cabReqs[f] = true
+                        break
+                    }
+                }
+            }
+        }
+
+        states[id] = costfunction.HRAElevState{
+            Behavior:    behaviourToString(s.Behaviour),
+            Floor:       s.Floor,
+            Direction:   dirnToString(s.Direction),
+            CabRequests: cabReqs,
+        }
+    }
+    return states
 }
 
 func behaviourToString(b elevtype.Behaviour) string {
