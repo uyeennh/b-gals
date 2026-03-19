@@ -54,6 +54,7 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
+				e.requests = assignments
 		
 			case ES_DoorOpen:
 				setAllLights(io, e)
