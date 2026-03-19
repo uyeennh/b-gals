@@ -54,12 +54,7 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
-				 pair := ChooseDirection(e)
-    			if pair.state == ES_Idle {
-        			io.SetMotorDirection(D_Stop)
-        			motorTimer.Stop()
-        			e.dirn = D_Stop
-        			e.state = ES_Idle
+
     }
 
 			case ES_DoorOpen:
