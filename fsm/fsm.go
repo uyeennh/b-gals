@@ -69,21 +69,21 @@ func RunFSM(
 			e.floor = newFloor
 			io.SetFloorIndicator(newFloor)
 
-			// Hard floor limits
-			if e.floor >= config.N_FLOORS-1 && e.dirn == D_Up {
+			if e.floor >= config.N_FLOORS-1 {
 				io.SetMotorDirection(D_Stop)
 				e.dirn = D_Stop
 				e.state = ES_Idle
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 				continue
 			}
-			if e.floor <= 0 && e.dirn == D_Down {
+			if e.floor <= 0 {
 				io.SetMotorDirection(D_Stop)
 				e.dirn = D_Stop
 				e.state = ES_Idle
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 				continue
 			}
+
 
 			fmt.Printf("[fsm] floor=%d state=%v dirn=%v shouldStop=%v HallUp=%v HallDown=%v Cab=%v\n",
 				e.floor, e.state, e.dirn,
