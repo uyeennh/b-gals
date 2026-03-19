@@ -42,8 +42,16 @@ func Compute(
 	if err !=nil {
 		return nil, false
 	}
-	// ADD THIS:
-    fmt.Printf("[HRA input for %s] %s\n", myID, string(jsonBytes))
+	hasHallReqs := false
+	for _, pair := range hallRequests {
+    	if pair[0] || pair[1] {
+        	hasHallReqs = true
+        	break
+    	}
+	}	
+	if hasHallReqs {
+    	fmt.Printf("[HRA input for %s] %s\n", myID, string(jsonBytes))
+	}
 
 
 	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
