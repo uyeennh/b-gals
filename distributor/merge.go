@@ -103,3 +103,17 @@ func copyHallOrders(orders [][2]order.Order) [][2]order.Order {
 	}
 	return copied
 }
+
+func hallOrdersStatusChanged(before, after [][2]order.Order) [][2]order.Order {
+	copied := make ([][2]order.Order, len(orders))
+	for f := range orders {
+		for b := range orders[f] {
+			copied[f][b] = order.Order {
+				Status: orders[f][b].Status,
+				Barrier: order.CopyBarrier(orders[f][b].Barrier),
+			
+			}
+		}
+	}
+	return copied
+}

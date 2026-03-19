@@ -68,6 +68,8 @@ func Distributor(
 			if message.SenderID == id {
 				continue
 			}
+			hallBefore := copyHallOrders(localWorldView.HallOrders)
+ 
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
@@ -81,15 +83,17 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-
+ 
+			if hallOrdersStatusChanged(hallBefore, localWorldView.HallOrders) {
+				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			}
+ 
 		case buttonEvent := <-driverButtonCh:
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-
+ 
 		case completedOrder := <-finReqCh:
 			localWorldView = handleFinishedOrder(id, localWorldView, completedOrder, peersAlive)
-			// Self-merge so our own barrier advances immediately
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
@@ -97,26 +101,23 @@ func Distributor(
 				peersAlive,
 			)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-
+ 
 		case state := <-stateCh:
 			elevatorState := localWorldView.States[id]
 			elevatorState.Floor = state.Floor
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
-
+ 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
-			// Always make sure our own ID is in the peer list
-			// peers.Receiver never includes ourselves because we never
-			// hear our own broadcast — so we add ourselves manually here
+			
 			if !order.ContainsID(peersAlive, id) {
 				peersAlive = append(peersAlive, id)
 			}
 			fmt.Println("Peers alive:", peersAlive)
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-
+ 
 		case <-lampTicker.C:
 			updateButtonLamps(id, localWorldView)
 		}

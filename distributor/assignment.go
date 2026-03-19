@@ -12,11 +12,6 @@ import (
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
-    for _, peer := range peersAlive {
-        if peer < id {
-            return
-        }
-    }
 	
 	hallReqs := extractConfirmedHallRequests(worldView)
     states := buildHRAStates(worldView, peersAlive)
@@ -25,23 +20,8 @@ func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAli
         return
     }
 
-    // ADD THIS:
-    for f, pair := range assigned {
-        if pair[0] || pair[1] {
-            fmt.Printf("[%s] HRA assigned me: floor=%d up=%v dn=%v\n", id, f, pair[0], pair[1])
-        }
-    }
-
     reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
-    
-    // AND THIS:
-    for f := range reqs {
-        if reqs[f][0] || reqs[f][1] || reqs[f][2] {
-            fmt.Printf("[%s] sending to FSM: floor=%d HallUp=%v HallDown=%v Cab=%v\n", 
-                id, f, reqs[f][0], reqs[f][1], reqs[f][2])
-        }
-    }
-
+   
     select {
     case <-assignmentCh:
     default:
@@ -79,26 +59,7 @@ func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[stri
         for f, o := range s.CabOrders {
             cabReqs[f] = o.Status == order.OrderStatusConfirmed
         }
-/*
-        if s.Behaviour == elevtype.B_Moving || s.Direction != elevtype.D_Stop {
-            switch s.Direction {
-            case elevtype.D_Up:
-                for f := s.Floor + 1; f < config.N_FLOORS; f++ {
-                    if confirmedHallOrders[f][int(elevtype.B_HallUp)] {
-                        cabReqs[f] = true
-                        break 
-                    }
-                }
-            case elevtype.D_Down:
-                for f := s.Floor - 1; f >= 0; f-- {
-                    if confirmedHallOrders[f][int(elevtype.B_HallDown)] {
-                        cabReqs[f] = true
-                        break
-                    }
-                }
-            }
-        }
-*/
+
         states[id] = costfunction.HRAElevState{
             Behavior:    behaviourToString(s.Behaviour),
             Floor:       s.Floor,
