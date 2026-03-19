@@ -1,10 +1,10 @@
 package fsm
 
 import (
+	"fmt"
 	"heis/config"
 	"heis/driver/elevio"
 	"time"
-	"fmt"
 )
 
 func RunFSM(
@@ -35,7 +35,9 @@ func RunFSM(
 		select {
 
 		case assignments := <-assignmentCh:
-			e.requests = assignments
+			if e.state != ES_Moving || e.floor >= 0 {
+				e.requests = assignments
+			}
 			switch e.state {
 			case ES_Idle:
 				pair := ChooseDirection(e)

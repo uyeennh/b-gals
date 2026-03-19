@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	broadcastInterval = 50 * time.Millisecond
+	broadcastInterval  = 50 * time.Millisecond
 	lampUpdateInterval = 200 * time.Millisecond
 )
 
 type networkMessage struct {
-	SenderID string
+	SenderID  string
 	WorldView worldview.WorldView
 }
 
@@ -53,16 +53,29 @@ func Distributor(
 
 	broadcastTicker := time.NewTicker(broadcastInterval)
 	defer broadcastTicker.Stop()
+
 	lampTicker := time.NewTicker(lampUpdateInterval)
 	defer lampTicker.Stop()
 
+	// broadcastNow sends our worldview immediately without waiting
+	// for the next broadcastTicker tick. Used whenever our own state
+	// changes so other elevators see it before computing assignments.
+	broadcastNow := func() {
+		select {
+		case <-messageTx:
+		default:
+		}
+		messageTx <- networkMessage{
+			SenderID:  id,
+			WorldView: copyWorldView(localWorldView),
+		}
+	}
+
 	for {
 		select {
+
 		case <-broadcastTicker.C:
-			messageTx <- networkMessage{
-				SenderID: id,
-				WorldView: copyWorldView(localWorldView),
-			}
+			broadcastNow()
 
 		case message := <-messageRx:
 			if message.SenderID == id {
@@ -81,22 +94,29 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
+			// Compute assignments after receiving a message from another
+			// elevator. At this point our worldview contains the sender's
+			// latest state (moving/idle/floor), so the cost function sees
+			// a consistent picture and assigns each order to only one elevator.
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case buttonEvent := <-driverButtonCh:
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			// Broadcast immediately so others learn about the new order.
+			// Do NOT compute assignments here — wait until we receive
+			// a message back that confirms everyone has seen the order.
+			broadcastNow()
 
 		case completedOrder := <-finReqCh:
 			localWorldView = handleFinishedOrder(id, localWorldView, completedOrder, peersAlive)
-			// Self-merge so our own barrier advances immediately
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
 				copyHallOrders(localWorldView.HallOrders),
 				peersAlive,
 			)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			// Broadcast immediately so others learn the order is done.
+			broadcastNow()
 
 		case state := <-stateCh:
 			elevatorState := localWorldView.States[id]
@@ -104,17 +124,17 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			//computeAndSendAssignment(id, lo calWorldView, peersAlive, assignmentCh)
+			// Broadcast immediately so other elevators see our new state
+			// (moving/idle/floor) before they compute their next assignment.
+			broadcastNow()
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
-			// Always make sure our own ID is in the peer list
-			// peers.Receiver never includes ourselves because we never
-			// hear our own broadcast — so we add ourselves manually here
 			if !order.ContainsID(peersAlive, id) {
 				peersAlive = append(peersAlive, id)
 			}
 			fmt.Println("Peers alive:", peersAlive)
+			// Recompute after peer change since available elevators changed.
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
 
 		case <-lampTicker.C:
