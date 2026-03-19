@@ -120,6 +120,15 @@ func Distributor(
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
 			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			// Immediately tell everyone our new state
+			select {
+			case <-messageTx:
+			default:
+			}
+			messageTx <- networkMessage{
+				SenderID:  id,
+				WorldView: copyWorldView(localWorldView),
+			}
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
