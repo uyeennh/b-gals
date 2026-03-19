@@ -15,7 +15,6 @@ func handleButtonPress(id string, worldView worldview.WorldView, buttonEvent ele
 		state := worldView.States[id]
 		if state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusNone ||
 			state.CabOrders[buttonEvent.Floor].Status == order.OrderStatusUnknown {
-			// cab orders are private
 			state.CabOrders[buttonEvent.Floor].Status = order.OrderStatusConfirmed
 			state.CabOrders[buttonEvent.Floor].Barrier = []string{}
 			worldView.States[id] = state

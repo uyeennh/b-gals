@@ -2,14 +2,10 @@ package fsm
 
 import "time"
 
-// Timer wraps time.Timer with safe stop/reset behaviour
-// Ensure reset after stop, time.timer is a type in the go-library, where we point timer to the type.
-// time.Timer from he Go's library
 type Timer struct {
 	timer *time.Timer
 }
 
-// Afactory that builds you a ready-to-use box with a clock inside
 // the clock is stopped, needs to start and reset it
 func NewTimer() *Timer {
 	tt := time.NewTimer(time.Hour)

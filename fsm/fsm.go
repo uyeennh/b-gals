@@ -35,9 +35,9 @@ func RunFSM(
 		select {
 
 		case assignments := <-assignmentCh:
-			e.requests = assignments
 			switch e.state {
 			case ES_Idle:
+				e.requests = assignments
 				pair := ChooseDirection(e)
 				e.dirn, e.state = pair.dirn, pair.state
 				switch e.state {
@@ -56,10 +56,11 @@ func RunFSM(
 				case ES_Idle:
 
 				}
-				
+
 			case ES_Moving:
 				e.requests = mergeRequestsInFlight(e, assignments) 
 			case ES_DoorOpen:
+				e.requests = assignments
 				setAllLights(io, e)
 			}
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
@@ -135,7 +136,6 @@ func RunFSM(
 			}
 
 			if e.directionChangePending {
-				// Second door open: clear the opposite-direction call now
 				e.directionChangePending = false
 				dirChangeEvs := collectDirectionChangeClearedEvents(&e, e.floor)
 				flushPendingFinReqs(dirChangeEvs, finReqCh)
@@ -151,7 +151,6 @@ func RunFSM(
 				pendingFinReqs = nil
 
 				if e.directionChangePending {
-					// Keep door open another 3 seconds
 					io.SetDoorOpenLamp(true)
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
 					setAllLights(io, e)

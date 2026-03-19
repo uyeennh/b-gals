@@ -19,9 +19,9 @@ func ChooseDirection(e Elevator) DirnBehaviourPair {
 	case D_Up:
 		switch {
 		case above:
-			return DirnBehaviourPair{dirn: D_Up, state: ES_Moving} //skal vi ha _ eller konsekvent ike spør senere
+			return DirnBehaviourPair{dirn: D_Up, state: ES_Moving} 
 		case here:
-			return DirnBehaviourPair{dirn: D_Stop, state: ES_DoorOpen} //Vurdere om ddown er bedre
+			return DirnBehaviourPair{dirn: D_Stop, state: ES_DoorOpen} 
 		case below:
 			return DirnBehaviourPair{dirn: D_Down, state: ES_Moving}
 		default:
@@ -30,18 +30,17 @@ func ChooseDirection(e Elevator) DirnBehaviourPair {
 
 	case D_Down:
 		switch {
-		case below: //check below first when going down
+		case below: 
 			return DirnBehaviourPair{dirn: D_Down, state: ES_Moving}
 		case here:
 			return DirnBehaviourPair{dirn: D_Stop, state: ES_DoorOpen}
 		case above:
-			return DirnBehaviourPair{dirn: D_Up, state: ES_Moving} //skal vi ha _ eller konsekvent ike spør senere
+			return DirnBehaviourPair{dirn: D_Up, state: ES_Moving} 
 		default:
 			return DirnBehaviourPair{dirn: D_Stop, state: ES_Idle}
 		}
 
 	default: 
-		//return DirnBehaviourPair{dirn: D_Stop, state: ES_Idle}
 
 		switch {
 		case here:
@@ -130,7 +129,6 @@ func collectClearedEvents(e *Elevator, floor int) ([]elevio.ButtonEvent, bool) {
 }
 
 
-// Phase 2: clears the opposite-direction call after second door open
 func collectDirectionChangeClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
     if floor < 0 || floor >= config.N_FLOORS {
         return nil
@@ -203,17 +201,14 @@ func ClearNow(e Elevator, ButtonFloor int, ButtonType Button) bool {
 func mergeRequestsInFlight(e Elevator, newAssignments [config.N_FLOORS][config.N_BUTTONS]bool) [config.N_FLOORS][config.N_BUTTONS]bool {
     merged := newAssignments
     for f := 0; f < config.N_FLOORS; f++ {
-        // Only protect floors ahead of us in travel direction
         floorIsAhead := (e.dirn == D_Up && f >= e.floor) || 
                         (e.dirn == D_Down && f <= e.floor)
         if !floorIsAhead {
             continue
         }
-        // Protect cab calls unconditionally — those are ours forever
         if e.requests[f][B_Cab] {
             merged[f][B_Cab] = true
         }
-        // Protect hall calls that match our direction
         if e.dirn == D_Up && e.requests[f][B_HallUp] {
             merged[f][B_HallUp] = true
         }

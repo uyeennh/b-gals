@@ -1,6 +1,5 @@
 package order
 
-// this is the old cyclic counter
 func MergeOrder(id string, local Order, received Order, peersAlive []string) Order {
 	merged := local
 	merged = resolveUnknown(merged, received)
@@ -34,13 +33,9 @@ func resolveUnknown(merged Order, received Order) Order {
 }
 
 func guardIllegalRollback(merged Order, received Order) Order {
-	// Guard: never roll back from OS_None to OS_Finished
-	// This handles stale OS_Finished broadcasts arriving after we already cleared
 	if merged.Status == OrderStatusNone && received.Status == OrderStatusFinished {
 		return merged
 	}
-	// If we are at OS_Finished and receive OS_None, the cycle completed
-	// on another elevator — we should also clear
 	if merged.Status == OrderStatusFinished && received.Status == OrderStatusNone {
 		return Order{Status: OrderStatusNone, Barrier: []string{}}
 	}

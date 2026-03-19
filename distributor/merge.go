@@ -30,7 +30,6 @@ func mergeStates(
 			existing.Behaviour = recvState.Behaviour
 			localStates[senderID] = existing
 		} else {
-			// First time we hear from this elevator — add it to our WorldView
 			localStates[senderID] = recvState
 		}
 	}
@@ -62,7 +61,6 @@ func copyWorldView(worldView worldview.WorldView) worldview.WorldView {
 		HallOrders: make([][2]order.Order, len(worldView.HallOrders)),
 		States:     make(map[string]worldview.ElevatorState),
 	}
-	// Deep copy hall orders
 	for f := range worldView.HallOrders {
 		for b := range worldView.HallOrders[f] {
 			copiedWorldView.HallOrders[f][b] = order.Order{
@@ -71,7 +69,6 @@ func copyWorldView(worldView worldview.WorldView) worldview.WorldView {
 			}
 		}
 	}
-	// Deep copy states
 	for id, state := range worldView.States {
 		newCabOrders := make([]order.Order, len(state.CabOrders))
 		for f, o := range state.CabOrders {
@@ -103,7 +100,7 @@ func copyHallOrders(orders [][2]order.Order) [][2]order.Order {
 	}
 	return copied
 }
-
+/*
 func hallOrdersStatusChanged(before, after [][2]order.Order) [][2]order.Order {
 	copied := make ([][2]order.Order, len(orders))
 	for f := range orders {
@@ -116,4 +113,15 @@ func hallOrdersStatusChanged(before, after [][2]order.Order) [][2]order.Order {
 		}
 	}
 	return copied
+}
+*/
+func hallOrdersStatusChanged(before, after [][2]order.Order) bool {
+    for f := range before {
+        for b := range before[f] {
+            if before[f][b].Status != after[f][b].Status {
+                return true
+            }
+        }
+    }
+    return false
 }
