@@ -4,6 +4,7 @@ import (
 	"heis/config"
 	"heis/driver/elevio"
 	"time"
+	"fmt"
 )
 
 func RunFSM(
@@ -54,7 +55,7 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
-				e.requests = assignments
+				//e.requests = assignments
 		
 			case ES_DoorOpen:
 				setAllLights(io, e)
@@ -66,6 +67,13 @@ func RunFSM(
 			motorTimer.Stop()
 			e.floor = newFloor
 			io.SetFloorIndicator(newFloor)
+
+			fmt.Printf("[fsm] floor=%d state=%v dirn=%v shouldStop=%v HallUp=%v HallDown=%v Cab=%v\n",
+        		e.floor, e.state, e.dirn, 
+        		ShouldStop(e),
+        		e.requests[e.floor][B_HallUp],
+        		e.requests[e.floor][B_HallDown],
+        		e.requests[e.floor][B_Cab])
 
 			if e.state != ES_Moving {
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
