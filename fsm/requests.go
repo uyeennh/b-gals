@@ -90,6 +90,7 @@ func collectClearedEvents(e *Elevator, floor int) []elevio.ButtonEvent {
         return nil
     }
 	var events []elevio.ButtonEvent
+	
 
     if e.requests[floor][B_Cab] {
         events = append(events, elevio.ButtonEvent{Floor: floor, Button: elevio.BT_Cab})

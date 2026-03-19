@@ -14,6 +14,7 @@ func RunFSM(
 	stateCh chan<- ElevatorStateMsg,
 	floorCh <-chan int,
 	obstrCh <-chan bool,
+	//directionChangePending bool,
 ) {
 	e := elevatorInit()
 	doorTimer := NewTimer()
