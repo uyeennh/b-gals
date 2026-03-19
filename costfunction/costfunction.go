@@ -7,6 +7,7 @@ import (
 	"heis/config"
 	"os/exec"
 	"runtime"
+	"fmt"
 )
 
 type HRAElevState struct {
@@ -35,6 +36,27 @@ func Compute(
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, false
+	}
+	hasHallReqs := false
+	for _, pair := range hallRequests {
+    	if pair[0] || pair[1] {
+        	hasHallReqs = true
+        	break
+    	}	
+	}
+
+	if hasHallReqs {
+    	fmt.Printf("[%s] floors:", myID)
+    	for id, s := range states {
+        	fmt.Printf(" %s(f%d,%s,%s)", id, s.Floor, s.Direction, s.Behavior)
+    	}
+    	fmt.Printf(" halls:")
+    	for f, pair := range hallRequests {
+        	if pair[0] || pair[1] {
+            	fmt.Printf(" f%d(up=%v,dn=%v)", f, pair[0], pair[1])
+        	}
+    	}
+    	fmt.Println()
 	}
 
 	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
