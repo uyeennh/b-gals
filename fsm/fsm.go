@@ -57,6 +57,7 @@ func RunFSM(
 					// nothing to do
 				}
 			case ES_Moving:
+				e.requests = assignments
 				// requests updated above, let floorCh handle stopping
 			case ES_DoorOpen:
 				setAllLights(io, e)
