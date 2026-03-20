@@ -6,6 +6,9 @@ import (
 	"heis/order"
 
 )
+
+const cabOrderFilePermissions = 0644
+
 func cabOrdersPath(id string) string {
     return "cab_orders_" + id + ".json"
 }
@@ -17,7 +20,7 @@ func SaveCabOrders(id string, orders []order.Order) error {
     if err != nil {
         return err
     }
-    return os.WriteFile(cabOrdersPath(id), data, 0644)
+    return os.WriteFile(cabOrdersPath(id), data, cabOrderFilePermissions)
 }
 
 //caborders read back from disk after restart

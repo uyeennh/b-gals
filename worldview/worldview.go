@@ -18,7 +18,7 @@ type WorldView struct {
 }
 
 func InitWorldView(id string, numFloors int) WorldView {
-		worldView := WorldView{
+	worldView := WorldView{
 		HallOrders: order.NewHallOrders(numFloors),
 		States:     make(map[string]ElevatorState),
 	}

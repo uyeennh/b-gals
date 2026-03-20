@@ -25,13 +25,7 @@ func main() {
 	fmt.Printf("[main] Starting elevator  id=%q  port=%d\n", id, conf.PortIo)
 
 
-	
-
 	elevio.Init(fmt.Sprintf("localhost:%d", conf.PortIo), config.N_FLOORS)
-
-
-
-	fmt.Printf("[main] Starting elevator node  id=%q\n", id)
 
 
 	peerUpdateCh  := make(chan peers.PeerUpdate)
@@ -43,15 +37,14 @@ func main() {
 	
 	transmitEnable <- true
 
-	
+	// Buffered so the FSM does not block while the distributor processes
 	stateMsgCh := make(chan fsm.ElevatorStateMsg, 4)
 	stateCh    := make(chan worldview.ElevatorState, 4)
-
-	
+	finReqCh := make(chan elevio.ButtonEvent, 8) 
 	assignmentCh := make(chan [config.N_FLOORS][config.N_BUTTONS]bool, 1)
 
 	
-	finReqCh := make(chan elevio.ButtonEvent, 8)
+	
 
 	
 	floorCh := make(chan int)

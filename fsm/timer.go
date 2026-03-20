@@ -47,6 +47,4 @@ func (tm *Timer) Start(d time.Duration) {
 	tm.timer.Reset(d)
 }
 
-func (tm *Timer) Reset(d time.Duration) {
-	tm.Start(d)
-}
+

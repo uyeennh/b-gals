@@ -45,8 +45,8 @@ func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[stri
 
 	confirmedHallOrders := make([][2]bool, config.N_FLOORS)
 	for f := range worldView.HallOrders {
-		confirmedHallOrders[f][0] = worldView.HallOrders[f][0].Status == order.OrderStatusConfirmed
-		confirmedHallOrders[f][1] = worldView.HallOrders[f][1].Status == order.OrderStatusConfirmed
+		confirmedHallOrders[f][int(elevtype.B_HallUp)] = worldView.HallOrders[f][0].Status == order.OrderStatusConfirmed
+		confirmedHallOrders[f][int(elevtype.B_HallDown)] = worldView.HallOrders[f][1].Status == order.OrderStatusConfirmed
 	}
 
 	for id, s := range worldView.States {

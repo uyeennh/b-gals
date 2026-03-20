@@ -5,12 +5,6 @@ import (
 	"heis/elevtype"
 )
 
-type Driver interface {
-	SetMotorDirection(dir int)                 
-	SetDoorOpenLamp(on bool)
-	SetFloorIndicator(floor int)
-	SetButtonLamp(button int, floor int, on bool) 
-}
 
 type ElevatorIO interface {
 	SetMotorDirection(dir elevtype.Dirn)
@@ -60,15 +54,11 @@ func (io *IO) SetButtonLamp(floor int, buttonEvent elevtype.Button, on bool) {
 	if floor < 0 || floor >= config.N_FLOORS {
 		return
 	}
-	io.drv.SetButtonLamp(buttonToDriver(buttonEvent), floor, on)
+	io.drv.SetButtonLamp(int(buttonEvent), floor, on)
 }
 
 
 
-func buttonToDriver(b elevtype.Button) int {
-	
-	return int(b)
-}
 
 
 

@@ -132,10 +132,6 @@ func ContainsID(slice []string, target string) bool {
 	return false
 }
 
-func PeersAliveInBarrier(barrier []string, peersAlive []string) bool {
-	return allAliveAcknowledged(barrier, peersAlive)
-}
-
 func CopyBarrier(b []string) []string {
 	c := make([]string, len(b))
 	copy(c, b)

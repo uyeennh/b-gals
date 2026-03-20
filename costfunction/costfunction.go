@@ -64,19 +64,3 @@ func executableName() string {
 	}
 }
 
-/*
-hraExecutable := ""
-    switch runtime.GOOS {
-        case "linux":   hraExecutable  = "hall_request_assigner"
-        case "windows": hraExecutable  = "hall_request_assigner.exe"
-        default:        panic("OS not supported")
-    }
-
-ret, err := exec.Command(
-		"../hall_request_assigner/"+hraExecutable,
-		"-i",
-		string(jsonBytes),
-	).CombinedOutput()
-
-	var output map[string][][2]bool
-	err = json.Unmarshal(ret, &output) */
