@@ -72,6 +72,8 @@ func Distributor(
 			}
 			lastSeen[message.SenderID] = true
 
+			hallBefore := copyHallOrders(localWorldView.HallOrders)
+
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
@@ -85,6 +87,14 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
+
+			if hallOrdersStatusChanged(hallBefore, localWorldView.HallOrders) {
+				for _, peer := range peersAlive {
+					if peer != id {
+						lastSeen[peer] = false
+					}
+				}
+			}
 
 			if allPeersSeen(peersAlive, lastSeen) {
 				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
