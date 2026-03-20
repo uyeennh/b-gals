@@ -23,7 +23,7 @@ func InitWorldView(id string, numFloors int) WorldView {
 		States:     make(map[string]ElevatorState),
 	}
 	worldView.States[id] = ElevatorState{
-		Floor:     -1,
+		Floor:     config.FloorUnknown,
 		Direction: elevtype.D_Stop,
 		Behaviour: elevtype.B_Idle,
 		CabOrders: order.NewCabOrders(numFloors),

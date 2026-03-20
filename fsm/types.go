@@ -51,7 +51,7 @@ type ElevatorStateMsg struct {
  
 func elevatorInit() Elevator{
 	return Elevator{
-		floor: -1,
+		floor: config.FloorUnknown,
 		dirn: D_Stop,
 		requests: [config.N_FLOORS][config.N_BUTTONS]bool{},
 		state: ES_Idle,

@@ -20,7 +20,7 @@ func RunFSM(
  
 	obstrActive := false
 	obstrCounter := 0
-	obstrStoredFloor := -1
+	obstrStoredFloor := config.FloorUnknown
  
 	var pendingFinReqs []elevio.ButtonEvent
  
@@ -94,16 +94,16 @@ func RunFSM(
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				if obstrCounter == config.ObstrTripsBeforeFloorInvalid {
 					obstrStoredFloor = e.floor
-					e.floor = -1
-					stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
+					e.floor = config.FloorUnknown
+					stateCh <- ElevatorStateMsg{Floor: config.FloorUnknown, Dirn: e.dirn, State: e.state}
 				}
 				obstrCounter++
 				continue
 			}
  
-			if e.floor == -1 && obstrStoredFloor != -1 {
+			if e.floor == config.FloorUnknown && obstrStoredFloor != config.FloorUnknown {
 				e.floor = obstrStoredFloor
-				obstrStoredFloor = -1
+				obstrStoredFloor = config.FloorUnknown
 			}
  
 			flushPendingFinReqs(pendingFinReqs, finReqCh)
@@ -129,10 +129,10 @@ func RunFSM(
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
  
 		case <-motorTimer.C():
-			e.floor = -1
+			e.floor = config.FloorUnknown
 			e.dirn = D_Up
 			e.state = ES_Moving
-			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
+			stateCh <- ElevatorStateMsg{Floor: config.FloorUnknown, Dirn: e.dirn, State: e.state}
 			io.SetMotorDirection(D_Up)
  
 		case obstr := <-obstrCh:
@@ -159,7 +159,7 @@ func setAllLights(io ElevatorIO, e Elevator) {
 }
  
 func findFloor(io ElevatorIO, floorCh <-chan int) int {
-	if f := elevio.GetFloor(); f != -1 {
+	if f := elevio.GetFloor(); f != config.FloorUnknown {
 		return f
 	}
 	io.SetMotorDirection(D_Up)

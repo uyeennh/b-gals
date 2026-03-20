@@ -72,3 +72,5 @@ func ReadConfigFile(path string) ElevatorConfig {
 	}
 	return conf
 }
+
+const FloorUnknown = -1
