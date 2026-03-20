@@ -15,11 +15,11 @@ func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAli
     hallReqs := extractConfirmedHallRequests(worldView)
     states := buildHRAStates(worldView, peersAlive)
 
-    // Only compute if we have states for ALL peers
-    if len(states) < len(peersAlive) {
-        return
-    }
 
+	if len(states) == 0 {
+    return
+	}
+	
     assigned, ok := costfunction.Compute(id, hallReqs, states)
     if !ok {
         return
