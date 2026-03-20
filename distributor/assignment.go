@@ -106,12 +106,3 @@ func mergeAssignedWithCabOrders(id string, assigned [][2]bool, worldView worldvi
 	return reqs
 }
 
-
-func computeAndSendAssignment(...) {
-    hallReqs := extractConfirmedHallRequests(worldView)
-    states := buildHRAStates(worldView, peersAlive)
-    
-    // ADD THIS:
-    fmt.Printf("[assignment] id=%s peersAlive=%v states=%+v hallReqs=%v\n", id, peersAlive, states, hallReqs)
-    
-    assigned, ok := costfunction.Compute(id, hallReqs, states)
