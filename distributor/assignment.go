@@ -7,22 +7,25 @@ import (
 	"heis/elevtype"
 	"heis/order"
 	"heis/worldview"
-	"fmt"
 
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
-	
-	hallReqs := extractConfirmedHallRequests(worldView)
+
+    hallReqs := extractConfirmedHallRequests(worldView)
     states := buildHRAStates(worldView, peersAlive)
-	fmt.Printf("[assignment] id=%s peersAlive=%v states=%+v hallReqs=%v\n", id, peersAlive, states, hallReqs)
+
+    // Only compute if we have states for ALL peers
+    if len(states) < len(peersAlive) {
+        return
+    }
+
     assigned, ok := costfunction.Compute(id, hallReqs, states)
     if !ok {
         return
     }
 
     reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
-   
     select {
     case <-assignmentCh:
     default:
