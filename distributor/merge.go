@@ -43,12 +43,14 @@ func mergeStates(
 			continue
 		}
 		for f := range recvState.CabOrders {
-			localState.CabOrders[f] = order.MergeOrder(
-				localID,
-				localState.CabOrders[f],
-				recvState.CabOrders[f],
-				peersAlive,
-			)
+			if recvStateID == senderID{
+				localState.CabOrders[f] = order.MergeOrder(
+					localID,
+					localState.CabOrders[f],
+					recvState.CabOrders[f],
+					peersAlive,
+				)
+			}
 		}
 		localStates[recvStateID] = localState
 	}

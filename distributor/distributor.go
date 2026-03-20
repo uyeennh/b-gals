@@ -68,7 +68,6 @@ func Distributor(
 			if message.SenderID == id {
 				continue
 			}
-			hallBefore := copyHallOrders(localWorldView.HallOrders)
  
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
@@ -84,9 +83,8 @@ func Distributor(
 				peersAlive,
 			)
  
-			if hallOrdersStatusChanged(hallBefore, localWorldView.HallOrders) {
-				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-			}
+			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			
  
 		case buttonEvent := <-driverButtonCh:
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
