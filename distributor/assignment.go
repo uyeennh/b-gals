@@ -7,30 +7,28 @@ import (
 	"heis/elevtype"
 	"heis/order"
 	"heis/worldview"
-
 )
 
 func computeAndSendAssignment(id string, worldView worldview.WorldView, peersAlive []string, assignmentCh chan [config.N_FLOORS][config.N_BUTTONS]bool) {
 
-    hallReqs := extractConfirmedHallRequests(worldView)
-    states := buildHRAStates(worldView, peersAlive)
-
+	hallReqs := extractConfirmedHallRequests(worldView)
+	states := buildHRAStates(worldView, peersAlive)
 
 	if len(states) == 0 {
-    return
+		return
 	}
-	
-    assigned, ok := costfunction.Compute(id, hallReqs, states)
-    if !ok {
-        return
-    }
 
-    reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
-    select {
-    case <-assignmentCh:
-    default:
-    }
-    assignmentCh <- reqs
+	assigned, ok := costfunction.Compute(id, hallReqs, states)
+	if !ok {
+		return
+	}
+
+	reqs := mergeAssignedWithCabOrders(id, assigned, worldView)
+	select {
+	case <-assignmentCh:
+	default:
+	}
+	assignmentCh <- reqs
 }
 
 func extractConfirmedHallRequests(worldView worldview.WorldView) [][2]bool {
@@ -43,35 +41,35 @@ func extractConfirmedHallRequests(worldView worldview.WorldView) [][2]bool {
 }
 
 func buildHRAStates(worldView worldview.WorldView, peersAlive []string) map[string]costfunction.HRAElevState {
-    states := make(map[string]costfunction.HRAElevState)
+	states := make(map[string]costfunction.HRAElevState)
 
-    confirmedHallOrders := make([][2]bool, config.N_FLOORS)
-    for f := range worldView.HallOrders {
-        confirmedHallOrders[f][0] = worldView.HallOrders[f][0].Status == order.OrderStatusConfirmed
-        confirmedHallOrders[f][1] = worldView.HallOrders[f][1].Status == order.OrderStatusConfirmed
-    }
+	confirmedHallOrders := make([][2]bool, config.N_FLOORS)
+	for f := range worldView.HallOrders {
+		confirmedHallOrders[f][0] = worldView.HallOrders[f][0].Status == order.OrderStatusConfirmed
+		confirmedHallOrders[f][1] = worldView.HallOrders[f][1].Status == order.OrderStatusConfirmed
+	}
 
-    for id, s := range worldView.States {
-        if s.Floor < 0 {
-            continue
-        }
-        if !order.ContainsID(peersAlive, id) {
-            continue
-        }
+	for id, s := range worldView.States {
+		if s.Floor < 0 {
+			continue
+		}
+		if !order.ContainsID(peersAlive, id) {
+			continue
+		}
 
-        cabReqs := make([]bool, config.N_FLOORS)
-        for f, o := range s.CabOrders {
-            cabReqs[f] = o.Status == order.OrderStatusConfirmed
-        }
+		cabReqs := make([]bool, config.N_FLOORS)
+		for f, o := range s.CabOrders {
+			cabReqs[f] = o.Status == order.OrderStatusConfirmed
+		}
 
-        states[id] = costfunction.HRAElevState{
-            Behavior:    behaviourToString(s.Behaviour),
-            Floor:       s.Floor,
-            Direction:   dirnToString(s.Direction),
-            CabRequests: cabReqs,
-        }
-    }
-    return states
+		states[id] = costfunction.HRAElevState{
+			Behavior:    behaviourToString(s.Behaviour),
+			Floor:       s.Floor,
+			Direction:   dirnToString(s.Direction),
+			CabRequests: cabReqs,
+		}
+	}
+	return states
 }
 
 func behaviourToString(b elevtype.Behaviour) string {
@@ -108,4 +106,3 @@ func mergeAssignedWithCabOrders(id string, assigned [][2]bool, worldView worldvi
 	}
 	return reqs
 }
-

@@ -114,9 +114,6 @@ func Distributor(
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
-			if allPeersSeen(peersAlive, lastSeen) {
-				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-			}
 
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
