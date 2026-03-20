@@ -1,10 +1,10 @@
 package fsm
 
 import (
+	"fmt"
 	"heis/config"
 	"heis/driver/elevio"
 	"time"
-	"fmt"
 )
 
 func RunFSM(
@@ -58,7 +58,7 @@ func RunFSM(
 				}
 
 			case ES_Moving:
-				e.requests = mergeRequestsInFlight(e, assignments) 
+				e.requests = mergeRequestsInFlight(e, assignments)
 			case ES_DoorOpen:
 				e.requests = assignments
 				setAllLights(io, e)
@@ -84,7 +84,6 @@ func RunFSM(
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 				continue
 			}
-
 
 			fmt.Printf("[fsm] floor=%d state=%v dirn=%v shouldStop=%v HallUp=%v HallDown=%v Cab=%v\n",
 				e.floor, e.state, e.dirn,

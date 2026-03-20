@@ -1,12 +1,10 @@
 package costfunction
 
-
 import (
 	"encoding/json"
 	"heis/config"
 	"os/exec"
 	"runtime"
-	"fmt"
 )
 
 type HRAElevState struct {
@@ -36,7 +34,6 @@ func Compute(
 	if err != nil {
 		return nil, false
 	}
-	
 
 	rawOutput, err := exec.Command(executableName(), "-i", string(jsonBytes)).CombinedOutput()
 	if err != nil {
