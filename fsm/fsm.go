@@ -1,12 +1,11 @@
 package fsm
-
+ 
 import (
-	"fmt"
 	"heis/config"
 	"heis/driver/elevio"
 	"time"
 )
-
+ 
 func RunFSM(
 	io ElevatorIO,
 	assignmentCh <-chan [config.N_FLOORS][config.N_BUTTONS]bool,
@@ -18,93 +17,66 @@ func RunFSM(
 	e := elevatorInit()
 	doorTimer := NewTimer()
 	motorTimer := NewTimer()
-
+ 
 	obstrActive := false
 	obstrCounter := 0
 	obstrStoredFloor := -1
-
+ 
 	var pendingFinReqs []elevio.ButtonEvent
-
+ 
 	e.floor = findFloor(io, floorCh)
 	io.SetFloorIndicator(e.floor)
 	e.dirn = D_Stop
 	e.state = ES_Idle
 	stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-
+ 
 	for {
 		select {
-
+ 
 		case assignments := <-assignmentCh:
+			e.requests = assignments
 			switch e.state {
 			case ES_Idle:
-				e.requests = assignments
 				pair := ChooseDirection(e)
 				e.dirn, e.state = pair.dirn, pair.state
 				switch e.state {
 				case ES_DoorOpen:
 					io.SetDoorOpenLamp(true)
 					doorTimer.Start(e.elevConfig.DoorOpenDuration)
-					var needsDirChange bool
-					pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
-					if needsDirChange {
-						e.directionChangePending = true
-					}
+					pendingFinReqs = collectClearedEvents(&e, e.floor)
 					setAllLights(io, e)
 				case ES_Moving:
 					io.SetMotorDirection(e.dirn)
 					motorTimer.Start(config.MotorLossTimeout)
 				case ES_Idle:
-
 				}
-
 			case ES_Moving:
-				e.requests = mergeRequestsInFlight(e, assignments)
+				pair := ChooseDirection(e)
+				if pair.state == ES_Idle {
+					io.SetMotorDirection(D_Stop)
+					motorTimer.Stop()
+					e.dirn = D_Stop
+					e.state = ES_Idle
+				}
 			case ES_DoorOpen:
-				e.requests = assignments
 				setAllLights(io, e)
 			}
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-
+ 
 		case newFloor := <-floorCh:
 			motorTimer.Stop()
 			e.floor = newFloor
 			io.SetFloorIndicator(newFloor)
-
-			if e.floor >= config.N_FLOORS-1 {
-				io.SetMotorDirection(D_Stop)
-				e.dirn = D_Stop
-				e.state = ES_Idle
-				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-				continue
-			}
-			if e.floor <= 0 {
-				io.SetMotorDirection(D_Stop)
-				e.dirn = D_Stop
-				e.state = ES_Idle
-				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-				continue
-			}
-
-			fmt.Printf("[fsm] floor=%d state=%v dirn=%v shouldStop=%v HallUp=%v HallDown=%v Cab=%v\n",
-				e.floor, e.state, e.dirn,
-				ShouldStop(e),
-				e.requests[e.floor][B_HallUp],
-				e.requests[e.floor][B_HallDown],
-				e.requests[e.floor][B_Cab])
-
+ 
 			if e.state != ES_Moving {
 				stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
 				continue
 			}
-
+ 
 			if ShouldStop(e) {
 				io.SetMotorDirection(D_Stop)
 				io.SetDoorOpenLamp(true)
-				var needsDirChange bool
-				pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
-				if needsDirChange {
-					e.directionChangePending = true
-				}
+				pendingFinReqs = collectClearedEvents(&e, e.floor)
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				setAllLights(io, e)
 				e.state = ES_DoorOpen
@@ -112,12 +84,12 @@ func RunFSM(
 				motorTimer.Start(config.MotorLossTimeout)
 			}
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-
+ 
 		case <-doorTimer.C():
 			if e.state != ES_DoorOpen {
 				continue
 			}
-
+ 
 			if obstrActive {
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
 				if obstrCounter == config.ObstrTripsBeforeFloorInvalid {
@@ -128,48 +100,23 @@ func RunFSM(
 				obstrCounter++
 				continue
 			}
-
+ 
 			if e.floor == -1 && obstrStoredFloor != -1 {
 				e.floor = obstrStoredFloor
 				obstrStoredFloor = -1
 			}
-
-			if e.directionChangePending {
-				e.directionChangePending = false
-				dirChangeEvs := collectDirectionChangeClearedEvents(&e, e.floor)
-				flushPendingFinReqs(dirChangeEvs, finReqCh)
-			} else {
-				if pendingFinReqs == nil && e.floor >= 0 {
-					var needsDirChange bool
-					pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
-					if needsDirChange {
-						e.directionChangePending = true
-					}
-				}
-				flushPendingFinReqs(pendingFinReqs, finReqCh)
-				pendingFinReqs = nil
-
-				if e.directionChangePending {
-					io.SetDoorOpenLamp(true)
-					doorTimer.Start(e.elevConfig.DoorOpenDuration)
-					setAllLights(io, e)
-					stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-					continue
-				}
-			}
-
+ 
+			flushPendingFinReqs(pendingFinReqs, finReqCh)
+			pendingFinReqs = nil
+ 
 			pair := ChooseDirection(e)
 			e.dirn, e.state = pair.dirn, pair.state
-
+ 
 			switch e.state {
 			case ES_DoorOpen:
 				io.SetDoorOpenLamp(true)
 				doorTimer.Start(e.elevConfig.DoorOpenDuration)
-				var needsDirChange bool
-				pendingFinReqs, needsDirChange = collectClearedEvents(&e, e.floor)
-				if needsDirChange {
-					e.directionChangePending = true
-				}
+				pendingFinReqs = collectClearedEvents(&e, e.floor)
 				setAllLights(io, e)
 			case ES_Moving:
 				io.SetDoorOpenLamp(false)
@@ -180,14 +127,14 @@ func RunFSM(
 				io.SetMotorDirection(D_Stop)
 			}
 			stateCh <- ElevatorStateMsg{Floor: e.floor, Dirn: e.dirn, State: e.state}
-
+ 
 		case <-motorTimer.C():
 			e.floor = -1
 			e.dirn = D_Up
 			e.state = ES_Moving
 			stateCh <- ElevatorStateMsg{Floor: -1, Dirn: e.dirn, State: e.state}
 			io.SetMotorDirection(D_Up)
-
+ 
 		case obstr := <-obstrCh:
 			obstrActive = obstr
 			if obstr {
@@ -204,23 +151,21 @@ func RunFSM(
 		}
 	}
 }
-
+ 
 func setAllLights(io ElevatorIO, e Elevator) {
 	for f := 0; f < config.N_FLOORS; f++ {
 		io.SetButtonLamp(f, B_Cab, e.requests[f][B_Cab])
 	}
 }
-
+ 
 func findFloor(io ElevatorIO, floorCh <-chan int) int {
 	if f := elevio.GetFloor(); f != -1 {
 		return f
 	}
-
 	io.SetMotorDirection(D_Up)
 	reversed := false
 	t := time.NewTimer(config.MotorLossTimeout)
 	defer t.Stop()
-
 	for {
 		select {
 		case floor := <-floorCh:
