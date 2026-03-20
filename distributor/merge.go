@@ -35,11 +35,12 @@ func mergeStates(
 	}
 
 	for recvStateID, recvState := range receivedStates {
-		localState, exists := localStates[recvStateID]
-		if !exists {
+		if recvStateID == localID {
 			continue
 		}
-		if recvStateID == localID {
+		localState, exists := localStates[recvStateID]
+		if !exists {
+			localStates[recvStateID] = recvState
 			continue
 		}
 		for f := range recvState.CabOrders {
