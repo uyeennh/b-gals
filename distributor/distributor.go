@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	broadcastInterval = 50 * time.Millisecond
+	broadcastInterval  = 50 * time.Millisecond
 	lampUpdateInterval = 200 * time.Millisecond
 )
 
 type networkMessage struct {
-	SenderID string
+	SenderID  string
 	WorldView worldview.WorldView
 }
 
@@ -42,6 +42,8 @@ func Distributor(
 	localWorldView.States[id] = restoredState
 
 	peersAlive := []string{id}
+	lastSeen := make(map[string]bool)
+	lastSeen[id] = true
 
 	messageTx := make(chan networkMessage, 1)
 	messageRx := make(chan networkMessage)
@@ -60,7 +62,7 @@ func Distributor(
 		select {
 		case <-broadcastTicker.C:
 			messageTx <- networkMessage{
-				SenderID: id,
+				SenderID:  id,
 				WorldView: copyWorldView(localWorldView),
 			}
 
@@ -68,7 +70,8 @@ func Distributor(
 			if message.SenderID == id {
 				continue
 			}
- 
+			lastSeen[message.SenderID] = true
+
 			localWorldView.HallOrders = mergeHallOrders(
 				id,
 				localWorldView.HallOrders,
@@ -82,14 +85,17 @@ func Distributor(
 				message.WorldView.States,
 				peersAlive,
 			)
- 
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
-			
- 
+
+			if allPeersSeen(peersAlive, lastSeen) {
+				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			}
+
 		case buttonEvent := <-driverButtonCh:
 			localWorldView = handleButtonPress(id, localWorldView, buttonEvent, peersAlive)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
- 
+			if allPeersSeen(peersAlive, lastSeen) {
+				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			}
+
 		case completedOrder := <-finReqCh:
 			localWorldView = handleFinishedOrder(id, localWorldView, completedOrder, peersAlive)
 			localWorldView.HallOrders = mergeHallOrders(
@@ -98,26 +104,48 @@ func Distributor(
 				copyHallOrders(localWorldView.HallOrders),
 				peersAlive,
 			)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
- 
+			if allPeersSeen(peersAlive, lastSeen) {
+				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			}
+
 		case state := <-stateCh:
 			elevatorState := localWorldView.States[id]
 			elevatorState.Floor = state.Floor
 			elevatorState.Direction = state.Direction
 			elevatorState.Behaviour = state.Behaviour
 			localWorldView.States[id] = elevatorState
- 
+
 		case peerUpdate := <-peerUpdateCh:
 			peersAlive = peerUpdate.Peers
-			
 			if !order.ContainsID(peersAlive, id) {
 				peersAlive = append(peersAlive, id)
 			}
+			// Reset lastSeen — only keep peers that are still alive
+			newLastSeen := make(map[string]bool)
+			for _, peer := range peersAlive {
+				if lastSeen[peer] {
+					newLastSeen[peer] = true
+				}
+			}
+			lastSeen = newLastSeen
+			lastSeen[id] = true
+
 			fmt.Println("Peers alive:", peersAlive)
-			computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
- 
+			if allPeersSeen(peersAlive, lastSeen) {
+				computeAndSendAssignment(id, localWorldView, peersAlive, assignmentCh)
+			}
+
 		case <-lampTicker.C:
 			updateButtonLamps(id, localWorldView)
 		}
 	}
+}
+
+func allPeersSeen(peersAlive []string, lastSeen map[string]bool) bool {
+	for _, peer := range peersAlive {
+		if !lastSeen[peer] {
+			return false
+		}
+	}
+	return true
 }
