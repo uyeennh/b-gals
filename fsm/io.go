@@ -5,6 +5,13 @@ import (
 	"heis/elevtype"
 )
 
+type Driver interface {
+    SetMotorDirection(dir int)
+    SetDoorOpenLamp(on bool)
+    SetFloorIndicator(floor int)
+    SetButtonLamp(button int, floor int, on bool)
+}
+
 
 type ElevatorIO interface {
 	SetMotorDirection(dir elevtype.Dirn)
