@@ -19,6 +19,16 @@ but all of them are relevant to the modules purpose
 
 Config.go is clean way to avoid magic numbers and make the code even more readable. 
 
+The Standalone/Networked mode being handeled entirely within WVmanager
+(not letting ElevatorDriver and OrderDispatcher aware of network state)
+is a clean design to make the modules loosely coupled.
+
+The FSM functions are small and concrete - and that is also a trend acorss the
+rest of the code. Each function does one thing and that makes it easy to verify if correct and 
+easy to continue to use if you were to make the project more advanced
+
+The information flow is consistent in one direction through the system
+(buttonpress to WorldView to orderdispatcher to elevatordriver) which makes it easy to trace and debug.
 
 
 3422
@@ -31,11 +41,20 @@ bullet point 2
 
 
 
-86ab (- våres egen - to tilbakemeldinger trengs her)
+86ab 
 score :
 
-bullet point 1
+main.go does not give a full picture of the system since the network channels
+and button polling are created inside the distributor, not in main. Therefore if 
+you read main you cant see all the dependencies without opening other files. 
 
-bullet point 2
+The distributor handels to many responsibilities, button polling, network broadcast,
+order merging, lamp updates and order assignment happens in the same goroutine. This 
+reduces the modules cohesion and make it harder to change without unintended sideeffects. 
+
+The FSM in fsm.go is large and complex, which makes it hard to see if the obstruction 
+handeling is correct or not. 
+
+
 
 
