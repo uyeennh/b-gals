@@ -6,11 +6,20 @@ bullet point 1
 bullet point 2
 
 020d 
-score : 8
+score : 9
+
+Main.go is a good entrypoint  
+ - all goroutines and all the channels are initialized and passed in main so that you can
+  see the projects dependencies without having to open other files.  
+
+The modularity is good, all the modules have a clear central purpose and none of them intervene with others responsibilities.
+
+There is a good coherence in the project and across the modules - f.ex. worldviewmanager has a wide interface with 7 channels,
+but all of them are relevant to the modules purpose
+
+Config.go is clean way to avoid magic numbers and make the code even more readable. 
 
 
-
-bullet point 2
 
 3422
 score : 
@@ -22,7 +31,7 @@ bullet point 2
 
 
 
-86ab
+86ab (- våres egen - to tilbakemeldinger trengs her)
 score :
 
 bullet point 1
