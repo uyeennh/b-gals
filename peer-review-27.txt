@@ -1,0 +1,32 @@
+3f4e
+score : 
+ 
+bullet point 1
+
+bullet point 2
+
+020d 
+score : 8
+
+
+
+bullet point 2
+
+3422
+score : 
+
+bullet point 1
+
+bullet point 2
+
+
+
+
+86ab
+score :
+
+bullet point 1
+
+bullet point 2
+
+
